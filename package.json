@@ -1,0 +1,34 @@
+{
+  "name": "relude-parse",
+  "version": "0.1.0",
+  "description": "Monadic parsing with Relude",
+  "main": "index.js",
+  "scripts": {
+    "clean": "bsb -clean-world",
+    "build": "bsb -make-world",
+    "cleanbuild": "npm run clean && npm run build",
+    "test": "jest",
+    "cleantest": "npm run cleanbuild && npm run test",
+    "watch": "bsb -make-world -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andywhite37/relude-parse.git"
+  },
+  "author": "Reazen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andywhite37/relude-parse/issues"
+  },
+  "homepage": "https://github.com/andywhite37/relude-parse#readme",
+  "devDependencies": {
+    "@glennsl/bs-jest": "~0.4.8",
+    "bs-abstract": "~0.17.0",
+    "bs-platform": "~5.0.6",
+    "relude": "~0.18.0"
+  },
+  "peerDependencies": {
+    "bs-abstract": "~0.17.0",
+    "relude": "~0.18.0"
+  }
+}
