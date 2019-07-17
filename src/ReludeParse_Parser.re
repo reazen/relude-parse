@@ -252,3 +252,160 @@ Attempts a parser, and converts any errors into None, and wraps successful value
 */
 let optional: 'a. t('a) => t(option('a)) =
   p => orDefault(None, Relude.Option.some <$> p);
+
+/**
+Parses 0 or more separated values.
+*/
+let rec sepBy: 'a 's. (t('a), t('s)) => t(list('a)) =
+  (pa, ps) => {
+    Relude.Nel.toList <$> sepBy1(pa, ps) <|> pure([]);
+  }
+
+/**
+Parses 1 or more separated values.
+*/
+and sepBy1: 'a 's. (t('a), t('s)) => t(Relude.Nel.t('a)) =
+  (pa, ps) => {
+    pa
+    >>= (
+      h => {
+        many(ps *> pa) <#> (t => Relude.Nel.make(h, t));
+      }
+    );
+  };
+
+/**
+Parses 0 or more separated values, optionally ending with a separator
+*/
+let rec sepEndBy: 'a 's. (t('a), t('s)) => t(list('a)) =
+  (pa, ps) => Relude.Nel.toList <$> sepEndBy1(pa, ps) <|> pure([])
+
+/**
+Parses 1 or more separated values, optionally ending with a separator
+*/
+and sepEndBy1: 'a 's. (t('a), t('s)) => t(Relude.Nel.t('a)) =
+  (pa, ps) => {
+    pa
+    >>= (
+      h => {
+        ps
+        >>= (
+          _ => {
+            sepEndBy(pa, ps) <#> (t => Relude.Nel.make(h, t));
+          }
+        )
+        <|> pure(Relude.Nel.pure(h));
+      }
+    );
+  };
+
+/**
+Parses 0 or more separated values, ending with a separator
+ */
+let endBy: 'a 's. (t('a), t('s)) => t(list('a)) =
+  (pa, ps) => many(pa <* ps);
+
+/**
+Parses 1 or more separated values, ending with a separator
+ */
+let endBy1: 'a 's. (t('a), t('s)) => t(Relude.Nel.t('a)) =
+  (pa, ps) => many1(pa <* ps);
+
+/**
+Parses 0 or more values separated by a right-associative operator.
+ */
+let rec chainr: 'a. (t('a), t(('a, 'a) => 'a), 'a) => t('a) =
+  (pa, pf, a) => chainr1(pa, pf) <|> pure(a)
+
+/**
+Parses 1 or more values separated by a right-associative operator.
+ */
+and chainr1: 'a. (t('a), t(('a, 'a) => 'a)) => t('a) =
+  (pa, pf) => pa >>= (a => chainr1'(pa, pf, a))
+
+/**
+Parses 1 or more values separated by a right-associative operator.
+ */
+and chainr1': 'a. (t('a), t(('a, 'a) => 'a), 'a) => t('a) =
+  (pa, pf, a) =>
+    pf >>= (f => chainr1(pa, pf) <#> (a2 => f(a, a2))) <|> pure(a);
+
+/**
+Parses 0 or more values separated by a left-associative operator.
+ */
+let rec chainl: 'a. (t('a), t(('a, 'a) => 'a), 'a) => t('a) =
+  (pa, pf, a) => chainl1(pa, pf) <|> pure(a)
+
+/**
+Parses 1 or more values separated by a left-associative operator.
+ */
+and chainl1: 'a. (t('a), t(('a, 'a) => 'a)) => t('a) =
+  (pa, pf) => pa >>= (a => chainl1'(pa, pf, a))
+
+/**
+Parses 1 or more values separated by a left-associative operator.
+ */
+and chainl1': 'a. (t('a), t(('a, 'a) => 'a), 'a) => t('a) =
+  (pa, pf, a) =>
+    pf >>= (f => pa >>= (a2 => chainl1'(pa, pf, f(a, a2)))) <|> pure(a);
+
+/**
+Parses a value using any of the given parsers (first successful wins from left-to-right)
+*/
+let anyOf: 'a. list(t('a)) => t('a) =
+  ps => Relude.List.foldLeft((<|>), fail("Nothing to parse"), ps);
+
+/**
+Parses 0 or more values up until an end value
+ */
+let rec manyUntil: 'a 'e. (t('a), t('e)) => t(list('a)) =
+  (pa, pe) => pe *> pure([]) <|> (Relude.Nel.toList <$> many1Until(pa, pe))
+
+/**
+Parses 1 or more values up until an end value
+
+TODO: not stack safe
+ */
+and many1Until: 'a 'e. (t('a), t('e)) => t(Relude.Nel.t('a)) =
+  (pa, pe) =>
+    pa
+    >>= (
+      a => {
+        pe
+        <#> (_ => Relude.Nel.pure(a))
+        <|> (many1Until(pa, pe) <#> (nel => Relude.Nel.cons(a, nel)));
+      }
+    );
+
+////////////////////////////////////////////////////////////////////////////////
+// Text parsers
+////////////////////////////////////////////////////////////////////////////////
+
+let eof: t(unit) =
+  Parser(
+    ({pos, str} as posString) =>
+      if (pos < Relude.String.length(str)) {
+        Error({pos, error: ParseError("Expected EOF")});
+      } else {
+        Ok({result: (), suffix: posString});
+      },
+  );
+
+let anyChar: t(string) =
+  Parser(
+    ({pos, str}) =>
+      switch (Relude.String.charAt(pos, str)) {
+      | Some(c) => Ok({
+                     result: c,
+                     suffix: {
+                       str,
+                       pos: pos + 1,
+                     },
+                   })
+      | None =>
+        Error({
+          pos,
+          error: ParseError("Unexpected EOF when trying to parse any char"),
+        })
+      },
+  );
