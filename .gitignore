@@ -13,3 +13,6 @@ npm-debug.log
 
 # Git
 *.orig
+
+# Project files
+coverage/

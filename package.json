@@ -9,6 +9,8 @@
     "cleanbuild": "npm run clean && npm run build",
     "test": "jest",
     "cleantest": "npm run cleanbuild && npm run test",
+    "coverage": "jest --coverage",
+    "cleancoverage": "npm run cleanbuild && npm run coverage",
     "watch": "bsb -make-world -w"
   },
   "repository": {
