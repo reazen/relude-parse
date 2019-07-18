@@ -231,7 +231,7 @@ let ((<$>), (<#>), (<*>), ( <* ), ( *> ), (>>=), (<|>), (<?>)) =
 // Combinators
 ////////////////////////////////////////////////////////////////////////////////
 
-let lazy_: 'a. (unit => t('a)) => t('a) = getParser => getParser();
+//let lazy_: 'a. (unit => t('a)) => t('a) = getParser => getParser();
 
 /**
 Runs a parser to look ahead at a value, but keeps the parse position in its original location.
@@ -379,13 +379,13 @@ and sepBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
 /**
 Parses 0 or more separated values, optionally ending with a separator
 */
-let rec sepEndBy: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
-  (ps, pa) => Relude.Nel.toList <$> sepEndBy1(ps, pa) <|> pure([])
+let rec sepByOptEnd: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
+  (ps, pa) => Relude.Nel.toList <$> sepByOptEnd1(ps, pa) <|> pure([])
 
 /**
 Parses 1 or more separated values, optionally ending with a separator
 */
-and sepEndBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
+and sepByOptEnd1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
   (ps, pa) => {
     pa
     >>= (
@@ -393,7 +393,7 @@ and sepEndBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
         ps
         >>= (
           _ => {
-            sepEndBy(ps, pa) <#> (t => Relude.Nel.make(h, t));
+            sepByOptEnd(ps, pa) <#> (t => Relude.Nel.make(h, t));
           }
         )
         <|> pure(Relude.Nel.pure(h));
@@ -404,13 +404,13 @@ and sepEndBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
 /**
 Parses 0 or more separated values, ending with a separator
  */
-let endBy: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
+let sepByWithEnd: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
   (ps, pa) => many(pa <* ps);
 
 /**
 Parses 1 or more separated values, ending with a separator
  */
-let endBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
+let sepByWithEnd1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
   (ps, pa) => many1(pa <* ps);
 
 /**
@@ -612,14 +612,16 @@ Matches a single char that passes the given predicate
 */
 let anyCharBy: (string => bool) => t(string) =
   pred => {
-    anyChar
-    >>= (
-      c =>
-        if (pred(c)) {
-          pure(c);
-        } else {
-          fail("Expected char to pass a predicate");
-        }
+    tries(
+      anyChar
+      >>= (
+        c =>
+          if (pred(c)) {
+            pure(c);
+          } else {
+            fail("Expected char to pass a predicate");
+          }
+      ),
     );
   };
 
@@ -700,7 +702,7 @@ let anyCharInRange: (int, int) => t(string) =
 Matches any lower-case char (ASCII code 97-122)
 */
 let anyLowerCaseChar: t(string) =
-  anyCharInRange(97, 122) <?> "Expected lower-case character";
+  anyCharInRange(97, 123) <?> "Expected lower-case character";
 
 /**
 Matches any lower-case char (ASCII code 65-90)
@@ -800,6 +802,5 @@ let delimited: string => t(list(string)) =
   delimiter =>
     sepBy(
       ws *> str(delimiter) <* ws, // Strip out whitespace around delimiter
-      manyUntil(void(str(delimiter)) <|> eof, anyChar)  // read many chars up to the next delimiter, or eof
-      <#> Relude.List.String.join // join all the read chars into a string
+      many1(anyAlpha) <#> (Relude.Nel.toList >> Relude.List.String.join),
     );

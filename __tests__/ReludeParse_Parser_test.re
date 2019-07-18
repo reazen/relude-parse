@@ -308,6 +308,16 @@ describe("ReludeParse_Parser", () => {
     testParse(P.many(P.anyDigit), "abc", [], {pos: 0, str: "abc"})
   );
 
+  // TODO: I think this fails because input is not consumed in the optional/orDefault default case
+  Skip.test("many optionals", () =>
+    testParse(
+      P.many(P.optional(P.anyDigit)),
+      "12a3",
+      [Some("1"), Some("2"), None, Some("3")],
+      {pos: 4, str: "12a3"},
+    )
+  );
+
   test("many1 success", () =>
     testParse(
       P.many1(P.anyDigit),
@@ -568,39 +578,272 @@ describe("ReludeParse_Parser", () => {
     )
   );
 
-  // orUnit
+  test("orUnit hit", () =>
+    testParse(P.anyDigit |> P.orUnit, "3", (), {pos: 1, str: "3"})
+  );
 
-  // optional
+  test("orUnit miss", () =>
+    testParse(P.anyDigit |> P.orUnit, "a", (), {pos: 0, str: "a"})
+  );
 
-  // sepBy1
+  test("optional hit", () =>
+    testParse(P.anyDigit |> P.optional, "3", Some("3"), {pos: 1, str: "3"})
+  );
 
-  // sepBy
+  test("optional miss", () =>
+    testParse(P.anyDigit |> P.optional, "a", None, {pos: 0, str: "a"})
+  );
 
-  // sepEndBy
+  test("sepBy empty", () =>
+    testParse(P.anyDigit |> P.sepBy(P.str(",")), "", [], {pos: 0, str: ""})
+  );
 
-  // sepEndBy1
+  test("sepBy no trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepBy(P.str(",")),
+      "1,2,3",
+      ["1", "2", "3"],
+      {pos: 5, str: "1,2,3"},
+    )
+  );
 
-  // endBy
+  test("sepBy trailing", () =>
+    testParseFail(P.anyDigit |> P.sepBy(P.str(",")), "1,2,3,", 6)
+  );
 
-  // endBy1
+  test("sepBy1 no trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepBy1(P.str(",")),
+      "1,2,3",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 5, str: "1,2,3"},
+    )
+  );
 
-  // chainr1
+  test("sepBy1 trailing", () =>
+    testParseFail(P.anyDigit |> P.sepBy1(P.str(",")), "1,2,3,", 6)
+  );
 
-  // chainr1'
+  test("sepByOptEnd no trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByOptEnd(P.str(",")),
+      "1,2,3",
+      ["1", "2", "3"],
+      {pos: 5, str: "1,2,3"},
+    )
+  );
 
-  // chainr
+  test("sepByOptEnd trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByOptEnd(P.str(",")),
+      "1,2,3,",
+      ["1", "2", "3"],
+      {pos: 6, str: "1,2,3,"},
+    )
+  );
 
-  // chainl1'
+  test("sepByOptEnd1 no trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByOptEnd1(P.str(",")),
+      "1,2,3",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 5, str: "1,2,3"},
+    )
+  );
 
-  // chainl1
+  test("sepByOptEnd1 trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByOptEnd1(P.str(",")),
+      "1,2,3,",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 6, str: "1,2,3,"},
+    )
+  );
 
-  // chainl
+  test("sepByWithEnd no trailing", () =>
+    testParseFail(P.anyDigit |> P.sepByWithEnd(P.str(",")), "1,2,3", 5)
+  );
 
-  // anyOf
+  test("sepByWithEnd trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByWithEnd(P.str(",")),
+      "1,2,3,",
+      ["1", "2", "3"],
+      {pos: 6, str: "1,2,3,"},
+    )
+  );
 
-  // many1Until
+  test("sepByWithEnd1 no trailing", () =>
+    testParseFail(P.anyDigit |> P.sepByWithEnd1(P.str(",")), "1,2,3", 5)
+  );
 
-  // manyUntil
+  test("sepByWithEnd1 trailing", () =>
+    testParse(
+      P.anyDigit |> P.sepByWithEnd1(P.str(",")),
+      "1,2,3,",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 6, str: "1,2,3,"},
+    )
+  );
+
+  test("chainr", () =>
+    testParse(
+      P.chainr(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        "",
+        P.anyDigit,
+      ),
+      "1+2+3",
+      "(1+(2+3))",
+      {pos: 5, str: "1+2+3"},
+    )
+  );
+
+  test("chainr empty", () =>
+    testParse(
+      P.chainr(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        "",
+        P.anyDigit,
+      ),
+      "",
+      "",
+      {pos: 0, str: ""},
+    )
+  );
+
+  test("chainr1", () =>
+    testParse(
+      P.chainr1(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        P.anyDigit,
+      ),
+      "1+2+3",
+      "(1+(2+3))",
+      {pos: 5, str: "1+2+3"},
+    )
+  );
+
+  test("chainr1 empty", () =>
+    testParseFail(
+      P.chainr1(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        P.anyDigit,
+      ),
+      "",
+      0,
+    )
+  );
+
+  test("chainl", () =>
+    testParse(
+      P.chainl(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        "",
+        P.anyDigit,
+      ),
+      "1+2+3",
+      "((1+2)+3)",
+      {pos: 5, str: "1+2+3"},
+    )
+  );
+
+  test("chainl empty", () =>
+    testParse(
+      P.chainl(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        "",
+        P.anyDigit,
+      ),
+      "",
+      "",
+      {pos: 0, str: ""},
+    )
+  );
+
+  test("chainl1", () =>
+    testParse(
+      P.chainl1(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        P.anyDigit,
+      ),
+      "1+2+3",
+      "((1+2)+3)",
+      {pos: 5, str: "1+2+3"},
+    )
+  );
+
+  test("chainl1 empty", () =>
+    testParseFail(
+      P.chainl1(
+        P.str("+") $> ((a, b) => "(" ++ a ++ "+" ++ b ++ ")"),
+        P.anyDigit,
+      ),
+      "",
+      0,
+    )
+  );
+
+  test("anyOf first", () =>
+    testParse(
+      P.anyOf([P.str("a"), P.str("b"), P.str("c")]),
+      "a",
+      "a",
+      {pos: 1, str: "a"},
+    )
+  );
+
+  test("anyOf second", () =>
+    testParse(
+      P.anyOf([P.str("a"), P.str("b"), P.str("c")]),
+      "b",
+      "b",
+      {pos: 1, str: "b"},
+    )
+  );
+
+  test("anyOf fail", () =>
+    testParseFail(P.anyOf([P.str("a"), P.str("b"), P.str("c")]), "d", 0)
+  );
+
+  test("manyUntil full success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntil(P.str("!")),
+      "123!",
+      ["1", "2", "3"],
+      {pos: 4, str: "123!"},
+    )
+  );
+
+  test("manyUntil empty success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntil(P.str("!")),
+      "!",
+      [],
+      {pos: 1, str: "!"},
+    )
+  );
+
+  test("manyUntil failure", () =>
+    testParseFail(P.anyDigit |> P.manyUntil(P.str("!")), "123", 3)
+  );
+
+  test("many1Until full success", () =>
+    testParse(
+      P.anyDigit |> P.many1Until(P.str("!")),
+      "123!",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 4, str: "123!"},
+    )
+  );
+
+  test("many1Until empty failure", () =>
+    testParseFail(P.anyDigit |> P.many1Until(P.str("!")), "!", 0)
+  );
+
+  test("many1Until failure", () =>
+    testParseFail(P.anyDigit |> P.many1Until(P.str("!")), "123", 3)
+  );
 
   test("eof empty string", () =>
     testParse(P.eof, "", (), {pos: 0, str: ""})
@@ -649,12 +892,25 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit, input, 0)
   );
 
-  test("anyStr", () =>
-    pass
+  test("anyStr empty", () =>
+    testParse(P.anyStr, "", "", {pos: 0, str: ""})
   );
 
-  test("anyNonEmptyStr", () =>
-    pass
+  test("anyStr non-empty", () =>
+    testParse(P.anyStr, "abc123! ", "abc123! ", {pos: 8, str: "abc123! "})
+  );
+
+  test("anyNonEmptyStr empty", () =>
+    testParseFail(P.anyNonEmptyStr, "", 0)
+  );
+
+  test("anyNonEmptyStr non-empty", () =>
+    testParse(
+      P.anyNonEmptyStr,
+      "abc123! ",
+      "abc123! ",
+      {pos: 8, str: "abc123! "},
+    )
   );
 
   test("str empty", () =>
@@ -674,11 +930,15 @@ describe("ReludeParse_Parser", () => {
   );
 
   test("strIgnoreCase", () =>
-    pass
+    testParse(P.strIgnoreCase("Hi"), "hI", "hI", {pos: 2, str: "hI"})
   );
 
-  test("anyCharBy", () =>
-    pass
+  test("anyCharBy success", () =>
+    testParse(P.anyCharBy(c => c == "x"), "x", "x", {pos: 1, str: "x"})
+  );
+
+  test("anyCharBy failure", () =>
+    testParseFail(P.anyCharBy(c => c == "x"), "y", 0)
   );
 
   test("anyOfStr first", () =>
@@ -697,6 +957,15 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyOfStr(["a", "b", "c"]), "d", 0)
   );
 
+  test("anyOfStr longer", () =>
+    testParse(
+      P.anyOfStr(["hi", "bye", "hello"]),
+      "bye",
+      "bye",
+      {pos: 3, str: "bye"},
+    )
+  );
+
   test("anyOfStr many", () =>
     testParse(
       P.many(P.anyOfStr(["a", "b", "c"])),
@@ -707,7 +976,12 @@ describe("ReludeParse_Parser", () => {
   );
 
   test("anyOfStrIgnoreCase", () =>
-    pass
+    testParse(
+      P.anyOfStrIgnoreCase(["Hi", "Bye", "Hello"]),
+      "bYE",
+      "bYE",
+      {pos: 3, str: "bYE"},
+    )
   );
 
   test("wsList empty", () =>
@@ -756,32 +1030,58 @@ describe("ReludeParse_Parser", () => {
     testParse(P.ws, "   \t \r \n", (), {str: "   \t \r \n", pos: 8})
   );
 
-  test("anyCharNotIn", () =>
-    pass
+  test("anyCharNotIn success", () =>
+    testParse(P.anyCharNotIn(["a", "b", "c"]), "x", "x", {pos: 1, str: "x"})
   );
 
-  test("anyCharNotInIgnoreCase", () =>
-    pass
+  test("anyCharNotIn failure", () =>
+    testParseFail(P.anyCharNotIn(["a", "b", "c"]), "b", 0)
+  );
+
+  test("anyCharNotInIgnoreCase success", () =>
+    testParse(
+      P.anyCharNotInIgnoreCase(["a", "b", "c"]),
+      "x",
+      "x",
+      {pos: 1, str: "x"},
+    )
+  );
+
+  test("anyCharNotInIgnoreCase failure", () =>
+    testParseFail(P.anyCharNotInIgnoreCase(["a", "b", "c"]), "B", 0)
   );
 
   test("anyCharInRange", () =>
-    pass
+    testParse(
+      P.many(P.anyCharInRange(98, 101)),
+      "bcdef",
+      ["b", "c", "d"],
+      {pos: 3, str: "bcdef"},
+    )
   );
 
-  test("anyLowerCaseChar", () =>
-    pass
+  let allLowerCaseChars = "abcdefghijklmnopqrstuvwxyz";
+  let allUpperCaseChars = allLowerCaseChars |> Relude.String.toUpperCase;
+  let allAlphaChars = allLowerCaseChars ++ allUpperCaseChars;
+  let allAlphaDigitChars = allAlphaChars ++ "0123456789";
+
+  testAll(
+    "anyLowerCaseChar", allLowerCaseChars |> Relude.String.splitList(""), c =>
+    testParse(P.anyLowerCaseChar, c, c, {pos: 1, str: c})
   );
 
-  test("anyUpperCaseChar", () =>
-    pass
+  testAll(
+    "anyUpperCaseChar", allUpperCaseChars |> Relude.String.splitList(""), c =>
+    testParse(P.anyUpperCaseChar, c, c, {pos: 1, str: c})
   );
 
-  test("anyAlpha", () =>
-    pass
+  testAll("anyAlpha", allAlphaChars |> Relude.String.splitList(""), c =>
+    testParse(P.anyAlpha, c, c, {pos: 1, str: c})
   );
 
-  test("anyAlphaOrDigit", () =>
-    pass
+  testAll(
+    "anyAlphaOrDigit", allAlphaDigitChars |> Relude.String.splitList(""), c =>
+    testParse(P.anyAlphaOrDigit, c, c, {pos: 1, str: c})
   );
 
   test("leftParen", () =>
@@ -855,9 +1155,9 @@ describe("ReludeParse_Parser", () => {
   test("delimited", () =>
     testParse(
       P.delimited(","),
-      "a, b,  c, d   d, ee e, f ",
-      ["a", "b", "c", "d   d", "ee e", "f"],
-      {pos: 20, str: ""},
+      "a, bb,  c , dd, eee, f",
+      ["a", "bb", "c", "dd", "eee", "f"],
+      {pos: 22, str: "a, bb,  c , dd, eee, f"},
     )
   );
 });
