@@ -308,12 +308,12 @@ describe("ReludeParse_Parser", () => {
     testParse(P.many(P.anyDigit), "abc", [], {pos: 0, str: "abc"})
   );
 
-  // TODO: I think this fails because input is not consumed in the optional/orDefault default case
-  Skip.test("many optionals", () =>
+  // Maybe this is failing b/c orDefault doesn't consume input when it hits the default?
+  Skip.test("many with default", () =>
     testParse(
-      P.many(P.optional(P.anyDigit)),
-      "12a3",
-      [Some("1"), Some("2"), None, Some("3")],
+      P.many(P.anyDigit |> P.orDefault("9")),
+      "12a4",
+      ["1", "2", "9", "4"],
       {pos: 4, str: "12a3"},
     )
   );
