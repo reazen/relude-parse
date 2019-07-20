@@ -9,6 +9,8 @@ module PosString = {
     pos: Pos.t,
     str: string,
   };
+
+  let make = (pos, str) => {pos, str};
 };
 
 module ParseError = {
@@ -71,22 +73,27 @@ module Functor: BsAbstract.Interface.FUNCTOR with type t('a) = t('a) = {
 };
 include Relude_Extensions_Functor.FunctorExtensions(Functor);
 
+/**
+Inspects a successful parse result using a callback with the value and the suffix
+*/
 let tap: 'a. (('a, PosString.t) => unit, t('a)) => t('a) =
   (f, Parser(pa)) =>
     Parser(
       posString =>
         pa(posString)
-        |> Relude.Result.tap(({result, suffix}) => f(result, suffix))
-        |> Relude.Result.map(({result, suffix}) => {result, suffix}),
+        |> Relude.Result.tap(({result, suffix}) => f(result, suffix)),
     );
 
+/**
+Logs a successful parse result and suffix for debuggin purposes.
+ */
 let tapLog: t('a) => t('a) =
   pa =>
     tap(
       (result, suffix) => {
-        Js.log("result:");
+        Js.log("Result:");
         Js.log(result);
-        Js.log("suffix:");
+        Js.log("Suffix:");
         Js.log(suffix);
       },
       pa,
@@ -482,6 +489,23 @@ and many1Until:
       }
     );
 
+/**
+Checks if the given parse result passes a predicate
+ */
+let filter: 'a. ('a => bool, t('a)) => t('a) =
+  (pred, pa) => {
+    tries(
+      pa
+      |> flatMap(a =>
+           if (pred(a)) {
+             pure(a);
+           } else {
+             fail("Result did not pass filter predicate");
+           }
+         ),
+    );
+  };
+
 ////////////////////////////////////////////////////////////////////////////////
 // Text parsers
 ////////////////////////////////////////////////////////////////////////////////
@@ -697,6 +721,65 @@ let anyCharInRange: (int, int) => t(string) =
         }
       ),
     );
+
+/**
+Matches any character that is not a digit
+ */
+let anyNonDigit: t(string) =
+  anyCharNotIn(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+
+/**
+Matches any non-zero digit character
+ */
+let anyNonZeroDigit: t(string) = anyCharInRange(49, 58);
+
+/**
+Matches any non-zero digit character as an int
+ */
+let anyNonZeroDigitAsInt: t(int) = anyNonZeroDigit <#> int_of_string;
+
+/**
+Matches a string of digits starting with a 0 or a digit 1-9 followed by any other digits
+ */
+let anyPositiveInt: t(int) =
+  str("0")
+  <#> int_of_string
+  <|> (
+    anyNonZeroDigit
+    >>= (
+      nonZeroDigit =>
+        many(anyDigit)
+        <#> Relude.List.String.join
+        <#> (otherDigits => int_of_string(nonZeroDigit ++ otherDigits)) // int_of_string is unsafe, but we are relatively sure we have a valid int string here, so we'll allow it
+    )
+  );
+
+/**
+Matches a "-" negative sign followed by a digit 1-9, followed by any other digits
+ */
+let anyNegativeInt: t(int) =
+  str("-")
+  *> anyPositiveInt
+  <#> (i => i * (-1))
+  <?> "Expected any negative int";
+
+/**
+Matches any int (negative or positive)
+*/
+let anyInt =
+  anyNegativeInt
+  <|> anyPositiveInt
+  <?> "Expected any int (negative or positive)";
+
+/**
+Matches a positive short (0-255)
+ */
+let anyPositiveShort: t(int) =
+  tries(
+    anyPositiveInt
+    |> filter(i => i <= 255)
+    <?> "Expected a positive short (0 - 255)",
+  );
 
 /**
 Matches any lower-case char (ASCII code 97-122)

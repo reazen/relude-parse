@@ -118,6 +118,26 @@ describe("ReludeParse_Parser", () => {
     testParse(P.anyDigit <#> int_of_string, "9", 9, {pos: 1, str: "9"})
   );
 
+  test("tap", () => {
+    let resultRef = ref("");
+    let posStringRef = ref(P.PosString.make(-1, ""));
+
+    let result =
+      P.anyDigit
+      |> P.tap((result, posString) => {
+           resultRef := result;
+           posStringRef := posString;
+         })
+      |> P.runParser("1");
+
+    expect((resultRef^, posStringRef^, result))
+    |> toEqual(("1", P.PosString.make(1, "1"), Belt.Result.Ok("1")));
+  });
+
+  Skip.test("tapLog", () =>
+    expect(P.anyDigit |> P.tapLog |> P.runParser("1") |> ignore) |> toEqual()
+  );
+
   test("apply/<*>", () =>
     testParse(
       P.pure(int_of_string) <*> P.anyDigit,
@@ -835,6 +855,24 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit |> P.many1Until(P.str("!")), "123", 3)
   );
 
+  test("filter success", () =>
+    testParse(
+      P.anyInt |> P.filter(i => i <= 255) <?> "Expected an int less than 255",
+      "255",
+      255,
+      {pos: 3, str: "255"},
+    )
+  );
+
+  test("filter failure", () =>
+    testParseFailWithMessage(
+      P.anyInt |> P.filter(i => i <= 255) <?> "Expected an int less than 255",
+      "256",
+      0,
+      "Expected an int less than 255",
+    )
+  );
+
   test("eof empty string", () =>
     testParse(P.eof, "", (), {pos: 0, str: ""})
   );
@@ -880,6 +918,95 @@ describe("ReludeParse_Parser", () => {
 
   testAll("anyDigit fail", badDigits, input =>
     testParseFail(P.anyDigit, input, 0)
+  );
+
+  testAll(
+    "anyNonZeroDigit", ["1", "2", "3", "4", "5", "6", "7", "8", "9"], input =>
+    testParse(P.anyNonZeroDigit, input, input, {pos: 1, str: input})
+  );
+
+  testAll("anyNonZeroDigit fail", ["0", "a", "!"], input =>
+    testParseFail(P.anyNonZeroDigit, input, 0)
+  );
+
+  testAll(
+    "anyNonZeroDigitAsInt",
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    input =>
+    testParse(
+      P.anyNonZeroDigitAsInt,
+      input,
+      int_of_string(input),
+      {pos: 1, str: input},
+    )
+  );
+
+  testAll("anyNonZeroDigitAsInt fail", ["0", "a", "!"], input =>
+    testParseFail(P.anyNonZeroDigitAsInt, input, 0)
+  );
+
+  testAll(
+    "anyPositiveInt",
+    [
+      ("0", 0, 1),
+      ("1", 1, 1),
+      ("2", 2, 1),
+      ("12", 12, 2),
+      ("12345", 12345, 5),
+      ("00", 0, 1), // 0 parses as int, leaving the remaining
+      ("01", 0, 1), // 0 parses as int, leaving the remaining
+      ("002", 0, 1) // 0 parses as int, leaving the remaining
+    ],
+    ((input, expected, pos)) =>
+    testParse(P.anyInt, input, expected, {pos, str: input})
+  );
+
+  testAll("anyPositiveInt fail", ["-1", "-0", "a", "!", ".0"], input =>
+    testParseFail(P.anyPositiveInt, input, 0)
+  );
+
+  testAll(
+    "anyNegativeInt",
+    [
+      ("-0", 0, 2),
+      ("-1", -1, 2),
+      ("-2", -2, 2),
+      ("-12", -12, 3),
+      ("-12345", -12345, 6),
+      ("-00", 0, 2), // 0 parses as int, leaving the remaining
+      ("-01", 0, 2), // 0 parses as int, leaving the remaining
+      ("-002", 0, 2) // 0 parses as int, leaving the remaining
+    ],
+    ((input, expected, pos)) =>
+    testParse(P.anyNegativeInt, input, expected, {pos, str: input})
+  );
+
+  testAll("anyNegativeInt fail", ["1", "0", "a", "!", ".0"], input =>
+    testParseFail(P.anyNegativeInt, input, 0)
+  );
+
+  testAll(
+    "anyInt",
+    [
+      ("0", 0, 1),
+      ("1", 1, 1),
+      ("2", 2, 1),
+      ("12", 12, 2),
+      ("12345", 12345, 5),
+      ("00", 0, 1), // 0 parses as int, leaving the remaining
+      ("01", 0, 1), // 0 parses as int, leaving the remaining
+      ("002", 0, 1), // 0 parses as int, leaving the remaining
+      ("-0", 0, 2),
+      ("-1", -1, 2),
+      ("-2", -2, 2),
+      ("-12", -12, 3),
+      ("-12345", -12345, 6),
+      ("-00", 0, 2), // 0 parses as int, leaving the remaining
+      ("-01", 0, 2), // 0 parses as int, leaving the remaining
+      ("-002", 0, 2) // 0 parses as int, leaving the remaining
+    ],
+    ((input, expected, pos)) =>
+    testParse(P.anyInt, input, expected, {pos, str: input})
   );
 
   test("anyStr empty", () =>
@@ -1108,6 +1235,13 @@ describe("ReludeParse_Parser", () => {
       "aAab",
       {pos: 10, str: "123aAab456"},
     )
+  );
+
+  testAll(
+    "regex fail",
+    [("aaab", [%re "/b/"], 0), ("", [%re "/a/"], 0)],
+    ((input, regex, pos)) =>
+    testParseFail(P.regex(regex), input, pos)
   );
 
   testAll(
