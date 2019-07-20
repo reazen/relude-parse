@@ -309,7 +309,7 @@ let times5: 'a. t('a) => t(('a, 'a, 'a, 'a, 'a)) =
 Attempts to run a parser at least `min` times (inclusive) and as many times as possible after that.
 */
 let timesAtLeast: 'a. (int, t('a)) => t(list('a)) =
-  (minIncl, pa) => Relude.List.concat <$> times(minIncl, pa) <*> many(pa);
+  (min, pa) => Relude.List.concat <$> times(min, pa) <*> many(pa);
 
 /**
 Attempts to run a parser as many times as possible up to `max` times (inclusive).
@@ -698,24 +698,24 @@ let anyCharNotInIgnoreCase: list(string) => t(string) =
   };
 
 /**
-Parses any character in the range of ASCII codes min (inclusive) to max (exclusive)
+Parses any character in the range of ASCII codes min (inclusive) to max (inclusive)
 */
 let anyCharInRange: (int, int) => t(string) =
-  (minIncl, maxExcl) =>
+  (min, max) =>
     tries(
       anyChar
       >>= (
         c => {
           let intValue = Js.Math.floor(Js.String.charCodeAt(0, c));
-          if (minIncl <= intValue && intValue < maxExcl) {
+          if (min <= intValue && intValue <= max) {
             pure(c);
           } else {
             fail(
               "Expected character in ASCII range "
-              ++ string_of_int(minIncl)
+              ++ string_of_int(min)
               ++ " (inclusive) and "
-              ++ string_of_int(maxExcl)
-              ++ " (exclulsive)",
+              ++ string_of_int(max)
+              ++ " (inclusive)",
             );
           };
         }
@@ -731,7 +731,7 @@ let anyNonDigit: t(string) =
 /**
 Matches any non-zero digit character
  */
-let anyNonZeroDigit: t(string) = anyCharInRange(49, 58);
+let anyNonZeroDigit: t(string) = anyCharInRange(49, 57);
 
 /**
 Matches any non-zero digit character as an int
@@ -785,13 +785,13 @@ let anyPositiveShort: t(int) =
 Matches any lower-case char (ASCII code 97-122)
 */
 let anyLowerCaseChar: t(string) =
-  anyCharInRange(97, 123) <?> "Expected lower-case character";
+  anyCharInRange(97, 122) <?> "Expected lower-case character";
 
 /**
 Matches any lower-case char (ASCII code 65-90)
 */
 let anyUpperCaseChar: t(string) =
-  anyCharInRange(65, 91) <?> "Expected upper-case character";
+  anyCharInRange(65, 90) <?> "Expected upper-case character";
 
 /**
 Matches any alpha character (a-z and A-Z)

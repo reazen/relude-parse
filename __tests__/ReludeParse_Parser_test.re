@@ -897,7 +897,7 @@ describe("ReludeParse_Parser", () => {
   );
 
   let goodDigits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-  let badDigits = ["a", "!", ",", " "];
+  let badDigits = ["a", "!", ",", " ", "/", ":"];
 
   testAll("anyDigitAsInt success", goodDigits, input =>
     testParse(
@@ -925,7 +925,7 @@ describe("ReludeParse_Parser", () => {
     testParse(P.anyNonZeroDigit, input, input, {pos: 1, str: input})
   );
 
-  testAll("anyNonZeroDigit fail", ["0", "a", "!"], input =>
+  testAll("anyNonZeroDigit fail", ["/", "0", "a", "!", ":"], input =>
     testParseFail(P.anyNonZeroDigit, input, 0)
   );
 
@@ -969,10 +969,10 @@ describe("ReludeParse_Parser", () => {
     "anyNegativeInt",
     [
       ("-0", 0, 2),
-      ("-1", -1, 2),
-      ("-2", -2, 2),
-      ("-12", -12, 3),
-      ("-12345", -12345, 6),
+      ("-1", (-1), 2),
+      ("-2", (-2), 2),
+      ("-12", (-12), 3),
+      ("-12345", (-12345), 6),
       ("-00", 0, 2), // 0 parses as int, leaving the remaining
       ("-01", 0, 2), // 0 parses as int, leaving the remaining
       ("-002", 0, 2) // 0 parses as int, leaving the remaining
@@ -997,10 +997,10 @@ describe("ReludeParse_Parser", () => {
       ("01", 0, 1), // 0 parses as int, leaving the remaining
       ("002", 0, 1), // 0 parses as int, leaving the remaining
       ("-0", 0, 2),
-      ("-1", -1, 2),
-      ("-2", -2, 2),
-      ("-12", -12, 3),
-      ("-12345", -12345, 6),
+      ("-1", (-1), 2),
+      ("-2", (-2), 2),
+      ("-12", (-12), 3),
+      ("-12345", (-12345), 6),
       ("-00", 0, 2), // 0 parses as int, leaving the remaining
       ("-01", 0, 2), // 0 parses as int, leaving the remaining
       ("-002", 0, 2) // 0 parses as int, leaving the remaining
@@ -1170,7 +1170,7 @@ describe("ReludeParse_Parser", () => {
 
   test("anyCharInRange", () =>
     testParse(
-      P.many(P.anyCharInRange(98, 101)),
+      P.many(P.anyCharInRange(98, 100)),
       "bcdef",
       ["b", "c", "d"],
       {pos: 3, str: "bcdef"},
@@ -1187,9 +1187,17 @@ describe("ReludeParse_Parser", () => {
     testParse(P.anyLowerCaseChar, c, c, {pos: 1, str: c})
   );
 
+  testAll("anyLowerCaseChar fail", ["`", "{"], c =>
+    testParseFail(P.anyLowerCaseChar, c, 0)
+  );
+
   testAll(
     "anyUpperCaseChar", allUpperCaseChars |> Relude.String.splitList(""), c =>
     testParse(P.anyUpperCaseChar, c, c, {pos: 1, str: c})
+  );
+
+  testAll("anyUpperCaseChar fail", ["@", "["], c =>
+    testParseFail(P.anyUpperCaseChar, c, 0)
   );
 
   testAll("anyAlpha", allAlphaChars |> Relude.String.splitList(""), c =>
