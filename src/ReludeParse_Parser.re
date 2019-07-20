@@ -724,10 +724,55 @@ Matches any alpha or digit character
 let anyAlphaOrDigit: t(string) =
   anyAlpha <|> anyDigit <?> "Expected any alpha character or any digit";
 
+let regex: Js.Re.t => t(string) =
+  regex =>
+    Parser(
+      ({pos, str}) => {
+        // Get the string value of the regex, and make sure it starts with ^ so we only match the next parse position, and not later in the input
+        let flags = Js.Re.flags(regex);
+        let source = Js.Re.source(regex);
+        let caretSource =
+          if (Relude.String.startsWith("^", source)) {
+            source;
+          } else {
+            "^" ++ source;
+          };
+        let regexFinal = Js.Re.fromStringWithFlags(caretSource, ~flags);
+        let input = Relude.String.sliceToEnd(pos, str);
+        let resultOpt = Js.Re.exec_(regexFinal, input);
+        let parseError = () =>
+          ParseError.ParseError(
+            "Expected match for regex "
+            ++ caretSource
+            ++ " with flags "
+            ++ flags,
+          );
+        switch (resultOpt) {
+        | None => Error({error: parseError(), pos})
+        | Some(result) =>
+          let captures: array(Js.nullable(string)) = Js.Re.captures(result);
+          Relude.Array.head(captures)
+          |> Relude.Option.flatMap(Js.Nullable.toOption)
+          |> Relude.Option.foldLazy(
+               () => Belt.Result.Error({error: parseError(), pos}),
+               match =>
+                 Belt.Result.Ok({
+                   result: match,
+                   suffix: {
+                     str,
+                     pos: pos + Relude.String.length(match),
+                   },
+                 }),
+             );
+        };
+      },
+    );
+
 /**
 Matches a string which matches the given regular expression
 */
-let regex: Js.Re.t => t(string) = _regex => pure("");
+let regexStr = (~flags: string="", regexString: string): t(string) =>
+  regex(Js.Re.fromStringWithFlags(regexString, ~flags));
 
 /**
 Matches a (

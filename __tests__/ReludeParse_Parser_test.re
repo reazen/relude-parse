@@ -308,16 +308,6 @@ describe("ReludeParse_Parser", () => {
     testParse(P.many(P.anyDigit), "abc", [], {pos: 0, str: "abc"})
   );
 
-  // Maybe this is failing b/c orDefault doesn't consume input when it hits the default?
-  Skip.test("many with default", () =>
-    testParse(
-      P.many(P.anyDigit |> P.orDefault("9")),
-      "12a4",
-      ["1", "2", "9", "4"],
-      {pos: 4, str: "12a3"},
-    )
-  );
-
   test("many1 success", () =>
     testParse(
       P.many1(P.anyDigit),
@@ -1082,6 +1072,57 @@ describe("ReludeParse_Parser", () => {
   testAll(
     "anyAlphaOrDigit", allAlphaDigitChars |> Relude.String.splitList(""), c =>
     testParse(P.anyAlphaOrDigit, c, c, {pos: 1, str: c})
+  );
+
+  testAll(
+    "regex various successful",
+    [
+      ("aaab", [%re "/a+/"], "aaa", 3),
+      ("aaab", [%re "/a{1,2}/"], "aa", 2),
+      ("aaabbb", [%re "/a+b+/"], "aaabbb", 6),
+      ("aaabbb", [%re "/a+b+c*/"], "aaabbb", 6),
+      ("aaabbbccc", [%re "/a+b+c*/"], "aaabbbccc", 9),
+      ("aaabbbcccd", [%re "/a+b+c*/"], "aaabbbccc", 9),
+      ("aAAbBBcCCd", [%re "/a+b+c*/i"], "aAAbBBcCC", 9),
+    ],
+    ((str, regex, expected, pos)) =>
+    testParse(P.regex(regex), str, expected, {pos, str})
+  );
+
+  test("regex mid-parse", () =>
+    testParse(
+      P.many1(P.anyDigit) *> P.regex([%re "/a+b/i"]),
+      "123aAab456",
+      "aAab",
+      {pos: 7, str: "123aAab456"},
+    )
+  );
+
+  test("regex mid-parse with eof", () =>
+    testParse(
+      P.many1(P.anyDigit)
+      *> P.regex([%re "/a+b/i"])
+      <* P.many(P.anyDigit)
+      <* P.eof,
+      "123aAab456",
+      "aAab",
+      {pos: 10, str: "123aAab456"},
+    )
+  );
+
+  testAll(
+    "regexStr various successful",
+    [
+      ("aaab", "a+", "", "aaa", 3),
+      ("aaab", "a{1,2}", "", "aa", 2),
+      ("aaabbb", "a+b+", "", "aaabbb", 6),
+      ("aaabbb", "a+b+c*", "", "aaabbb", 6),
+      ("aaabbbccc", "a+b+c*", "", "aaabbbccc", 9),
+      ("aaabbbcccd", "a+b+c*", "", "aaabbbccc", 9),
+      ("aAAbBBcCCd", "a+b+c*", "i", "aAAbBBcCC", 9),
+    ],
+    ((str, regexString, flags, expected, pos)) =>
+    testParse(P.regexStr(regexString, ~flags), str, expected, {pos, str})
   );
 
   test("leftParen", () =>
