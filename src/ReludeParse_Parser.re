@@ -920,15 +920,3 @@ Parses a value from between < and >, stripping out extra whitespace inside the <
 */
 let betweenAngles: 'a. t('a) => t('a) =
   pa => between(leftAngle, rightAngle, ws *> pa <* ws);
-
-/**
-Attempts to parse a delimited list of strings into a list of strings
-
-TODO: this is kind of silly
-*/
-let delimited: string => t(list(string)) =
-  delimiter =>
-    sepBy(
-      ws *> str(delimiter) <* ws, // Strip out whitespace around delimiter
-      many1(anyAlpha) <#> (Relude.Nel.toList >> Relude.List.String.join),
-    );

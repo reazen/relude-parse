@@ -1334,13 +1334,4 @@ describe("ReludeParse_Parser", () => {
       {pos: 9, str: "<  456  >"},
     )
   );
-
-  test("delimited", () =>
-    testParse(
-      P.delimited(","),
-      "a, bb,  c , dd, eee, f",
-      ["a", "bb", "c", "dd", "eee", "f"],
-      {pos: 22, str: "a, bb,  c , dd, eee, f"},
-    )
-  );
 });
