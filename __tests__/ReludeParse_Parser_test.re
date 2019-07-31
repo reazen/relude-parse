@@ -120,20 +120,28 @@ describe("ReludeParse_Parser", () => {
 
   test("tap", () => {
     let resultRef = ref("");
-    let posStringRef = ref(P.PosString.make(-1, ""));
+    let posStringBeforeRef = ref(P.PosString.make(-1, ""));
+    let posStringAfterRef = ref(P.PosString.make(-1, ""));
 
     let result =
       P.anyDigit
-      |> P.tap((result, posString) => {
+      |> P.tap((result, posStringBefore, posStringAfter) => {
            resultRef := result;
-           posStringRef := posString;
+           posStringBeforeRef := posStringBefore;
+           posStringAfterRef := posStringAfter;
          })
       |> P.runParser("1");
 
-    expect((resultRef^, posStringRef^, result))
-    |> toEqual(("1", P.PosString.make(1, "1"), Belt.Result.Ok("1")));
+    expect((resultRef^, posStringBeforeRef^, posStringAfterRef^, result))
+    |> toEqual((
+         "1",
+         P.PosString.make(0, "1"),
+         P.PosString.make(1, "1"),
+         Belt.Result.Ok("1"),
+       ));
   });
 
+  // Skip b/c this test is just noise
   Skip.test("tapLog", () =>
     expect(P.anyDigit |> P.tapLog |> P.runParser("1") |> ignore) |> toEqual()
   );

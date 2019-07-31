@@ -76,28 +76,33 @@ include Relude_Extensions_Functor.FunctorExtensions(Functor);
 /**
 Inspects a successful parse result using a callback with the value and the suffix
 */
-let tap: 'a. (('a, PosString.t) => unit, t('a)) => t('a) =
+let tap: 'a. (('a, PosString.t, PosString.t) => unit, t('a)) => t('a) =
   (f, Parser(pa)) =>
     Parser(
       posString =>
         pa(posString)
-        |> Relude.Result.tap(({result, suffix}) => f(result, suffix)),
+        |> Relude.Result.tap(({result, suffix}) =>
+             f(result, posString, suffix)
+           ),
     );
 
 /**
-Logs a successful parse result and suffix for debuggin purposes.
+Logs a successful parse result and suffix for debugging purposes.
  */
 let tapLog: t('a) => t('a) =
   pa =>
-    tap(
-      (result, suffix) => {
-        Js.log("Result:");
-        Js.log(result);
-        Js.log("Suffix:");
-        Js.log(suffix);
-      },
-      pa,
-    );
+    pa
+    |> tap((result, posStringBefore, posStringAfter) =>
+         Js.log3(
+           "ReludeParse log: input \""
+           ++ posStringBefore.str
+           ++ "\" at pos "
+           ++ string_of_int(posStringBefore.pos)
+           ++ " had result: ",
+           result,
+           " with resulting pos: " ++ string_of_int(posStringAfter.pos),
+         )
+       );
 
 /**
 Apply a wrapped function to a parser.

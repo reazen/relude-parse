@@ -1,7 +1,6 @@
 open Jest;
 open Expect;
 module P = ReludeParse.Parser;
-open P;
 
 module UUID = ReludeParse.UUID;
 
