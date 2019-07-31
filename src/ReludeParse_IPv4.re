@@ -4,7 +4,7 @@ open P;
 type t =
   | IPv4(int, int, int, int);
 
-let make = (a, b, c, d) => IPv4(a, b, c, d);
+let unsafeFromInts = (a, b, c, d) => IPv4(a, b, c, d);
 
 let show: t => string =
   (IPv4(first, second, third, fourth)) =>
@@ -23,5 +23,5 @@ let parser: P.t(t) = {
     anyPositiveShort <* str("."),
     anyPositiveShort,
   )
-  |> P.mapTuple4(make);
+  |> P.mapTuple4(unsafeFromInts);
 };

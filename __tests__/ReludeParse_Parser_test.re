@@ -483,53 +483,53 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit |> P.timesMinMax(2, 5), "0abc", 1)
   );
 
-  test("timesAtLeast exact min", () =>
+  test("timesMin exact min", () =>
     testParse(
-      P.anyDigit |> P.timesAtLeast(2),
+      P.anyDigit |> P.timesMin(2),
       "01abc",
       ["0", "1"],
       {pos: 2, str: "01abc"},
     )
   );
 
-  test("timesAtLeast full", () =>
+  test("timesMin full", () =>
     testParse(
-      P.anyDigit |> P.timesAtLeast(2),
+      P.anyDigit |> P.timesMin(2),
       "01234abc",
       ["0", "1", "2", "3", "4"],
       {pos: 5, str: "01234abc"},
     )
   );
 
-  test("timesAtLeast fail", () =>
-    testParseFail(P.anyDigit |> P.timesAtLeast(2), "0abc", 1)
+  test("timesMin fail", () =>
+    testParseFail(P.anyDigit |> P.timesMin(2), "0abc", 1)
   );
 
-  test("timesAtMost empty", () =>
-    testParse(P.anyDigit |> P.timesAtMost(3), "", [], {pos: 0, str: ""})
+  test("timesMax empty", () =>
+    testParse(P.anyDigit |> P.timesMax(3), "", [], {pos: 0, str: ""})
   );
 
-  test("timesAtMost partial", () =>
+  test("timesMax partial", () =>
     testParse(
-      P.anyDigit |> P.timesAtMost(3),
+      P.anyDigit |> P.timesMax(3),
       "01abc",
       ["0", "1"],
       {pos: 2, str: "01abc"},
     )
   );
 
-  test("timesAtMost exact max", () =>
+  test("timesMax exact max", () =>
     testParse(
-      P.anyDigit |> P.timesAtMost(3),
+      P.anyDigit |> P.timesMax(3),
       "012abc",
       ["0", "1", "2"],
       {pos: 3, str: "012abc"},
     )
   );
 
-  test("timesAtMost over max", () =>
+  test("timesMax over max", () =>
     testParse(
-      P.anyDigit |> P.timesAtMost(3),
+      P.anyDigit |> P.timesMax(3),
       "01234abc",
       ["0", "1", "2"],
       {pos: 3, str: "01234abc"},
@@ -1207,6 +1207,40 @@ describe("ReludeParse_Parser", () => {
   testAll(
     "anyAlphaOrDigit", allAlphaDigitChars |> Relude.String.splitList(""), c =>
     testParse(P.anyAlphaOrDigit, c, c, {pos: 1, str: c})
+  );
+
+  testAll(
+    "anyHexDigit valid",
+    [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+    ],
+    c =>
+    testParse(P.anyHexDigit, c, c, {pos: 1, str: c})
+  );
+
+  testAll("anyHexDigit invalid", ["", " ", "!", "g", "G"], c =>
+    testParseFail(P.anyHexDigit, c, 0)
   );
 
   testAll(

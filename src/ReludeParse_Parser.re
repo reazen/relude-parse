@@ -308,7 +308,7 @@ let times5: 'a. t('a) => t(('a, 'a, 'a, 'a, 'a)) =
 /**
 Attempts to run a parser at least `min` times (inclusive) and as many times as possible after that.
 */
-let timesAtLeast: 'a. (int, t('a)) => t(list('a)) =
+let timesMin: 'a. (int, t('a)) => t(list('a)) =
   (min, pa) => Relude.List.concat <$> times(min, pa) <*> many(pa);
 
 /**
@@ -316,14 +316,14 @@ Attempts to run a parser as many times as possible up to `max` times (inclusive)
 
 TODO: not stack safe
 */
-let rec timesAtMost: 'a. (int, t('a)) => t(list('a)) =
+let rec timesMax: 'a. (int, t('a)) => t(list('a)) =
   (max, pa) =>
     if (max == 0) {
       pure([]);
     } else {
       Relude.List.concat
       <$> (pa <#> (a => [a]) <|> pure([]))
-      <*> timesAtMost(max - 1, pa);
+      <*> timesMax(max - 1, pa);
     };
 
 /**
@@ -333,7 +333,7 @@ E.g. if you want to parse 2 to 5 digits, use: `timesMinMax(2, 5, anyDigit)`
 */
 let timesMinMax: 'a. (int, int, t('a)) => t(list('a)) =
   (min, max, pa) => {
-    Relude.List.concat <$> times(min, pa) <*> timesAtMost(max - min, pa);
+    Relude.List.concat <$> times(min, pa) <*> timesMax(max - min, pa);
   };
 
 /**
@@ -807,6 +807,25 @@ Matches any alpha or digit character
 let anyAlphaOrDigit: t(string) =
   anyAlpha <|> anyDigit <?> "Expected any alpha character or any digit";
 
+/**
+Matches any hex digit 0-9, a-f, or A-F */
+let anyHexDigit: t(string) =
+  anyDigit
+  <|> anyOfStrIgnoreCase(["a", "b", "c", "d", "e", "f"])
+  <?> "Expected any hex digit";
+
+/**
+Matches any hex digit except "0"
+ */
+let anyNonZeroHexDigit: t(string) =
+  anyHexDigit |> filter(c => c != "0") <?> "Expected any non-zero hex digit";
+
+/**
+Matches the given regular expression.
+
+Note: the regex will be prefixed with a ^ if one is not present to ensure a match at the current parse position,
+and not later in the input.
+*/
 let regex: Js.Re.t => t(string) =
   regex =>
     Parser(
@@ -853,6 +872,9 @@ let regex: Js.Re.t => t(string) =
 
 /**
 Matches a string which matches the given regular expression
+
+Note: the regex will be prefixed with a ^ if one is not present to ensure a match at the current parse position,
+and not later in the input.
 */
 let regexStr = (~flags: string="", regexString: string): t(string) =>
   regex(Js.Re.fromStringWithFlags(regexString, ~flags));
