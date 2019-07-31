@@ -88,6 +88,11 @@ let tap: 'a. (('a, PosString.t, PosString.t) => unit, t('a)) => t('a) =
 
 /**
 Logs a successful parse result and suffix for debugging purposes.
+
+This function can be chained onto any parser (even inside a more complicated applicative
+or monadic composition of parsers) to inject some unobtrusive logging for that parser.
+
+E.g. `many1(anyDigit) |> tapLog`
  */
 let tapLog: t('a) => t('a) =
   pa =>
