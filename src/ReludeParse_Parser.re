@@ -1020,26 +1020,35 @@ Parses a value from between < and >, stripping out extra whitespace inside the <
 let betweenAngles: 'a. t('a) => t('a) =
   pa => between(leftAngle, rightAngle, ws *> pa <* ws);
 
+/**
+Matches a double quote character
+*/
 let doubleQuote: t(string) = str("\"");
 
+/**
+Matches a value enclosed in double quotes
+ */
+let betweenDoubleQuotes: t('a) => t('a) =
+  pa => between(doubleQuote, doubleQuote, pa);
+
+/**
+Matches a ' character
+*/
 let singleQuote: t(string) = str("'");
 
+/**
+Matches a value enclosed in single quotes
+ */
+let betweenSingleQuotes: t('a) => t('a) =
+  pa => between(singleQuote, singleQuote, pa);
+
+/**
+Matches a ` character
+*/
 let backTick: t(string) = str("`");
 
 /**
-Matches a string enclosed in double quotes
- */
-let betweenDoubleQuotes: t('a) => t('a) =
-  pa => between(str("\""), str("\""), pa);
-
-/**
-Matches a string enclosed in single quotes
- */
-let betweenSingleQuotes: t('a) => t('a) =
-  pa => between(str("'"), str("'"), pa);
-
-/**
-Matches a string enclosed in backticks (`)
+Matches a value enclosed in backticks (`)
  */
 let betweenBackTicks: t('a) => t('a) =
-  pa => between(str("`"), str("`"), pa);
+  pa => between(backTick, backTick, pa);
