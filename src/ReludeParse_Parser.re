@@ -369,7 +369,7 @@ let orUnit: 'a. t('a) => t(unit) = p => p >>= (_ => pure()) <|> pure();
 /**
 Attempts a parser, and converts any errors into None, and wraps successful values in Some.
 */
-let optional: 'a. t('a) => t(option('a)) =
+let opt: 'a. t('a) => t(option('a)) =
   p => orDefault(None, Relude.Option.some <$> p);
 
 /**
@@ -578,7 +578,7 @@ Matches any digit 0-9 as a string
 let anyDigit: t(string) = string_of_int <$> anyDigitAsInt;
 
 /**
-Matches any string
+Matches any string (warning: this will likely consume as much input as possible)
  */
 let anyStr: t(string) = many(anyChar) <#> Relude.List.String.join;
 
@@ -751,7 +751,7 @@ let anyNonZeroDigitAsInt: t(int) = anyNonZeroDigit <#> int_of_string;
 /**
 Matches a string of digits starting with a 0 or a digit 1-9 followed by any other digits
  */
-let anyPositiveInt: t(int) =
+let anyUnsignedInt: t(int) =
   str("0")
   <#> int_of_string
   <|> (
@@ -765,11 +765,16 @@ let anyPositiveInt: t(int) =
   );
 
 /**
+Matches an unsigned int, or an int starting with a + sign
+ */
+let anyPositiveInt: t(int) = anyUnsignedInt <|> str("+") *> anyUnsignedInt;
+
+/**
 Matches a "-" negative sign followed by a digit 1-9, followed by any other digits
  */
 let anyNegativeInt: t(int) =
   str("-")
-  *> anyPositiveInt
+  *> anyUnsignedInt
   <#> (i => i * (-1))
   <?> "Expected any negative int";
 
@@ -784,12 +789,17 @@ let anyInt =
 /**
 Matches a positive short (0-255)
  */
-let anyPositiveShort: t(int) =
+let anyUnsignedShort: t(int) =
   tries(
     anyPositiveInt
     |> filter(i => i <= 255)
     <?> "Expected a positive short (0 - 255)",
   );
+
+/**
+Matches a short with an optional leading + sign
+*/
+let anyPositiveShort: t(int) = opt(str("+")) *> anyUnsignedShort;
 
 /**
 Matches any lower-case char (ASCII code 97-122)
@@ -890,6 +900,63 @@ let regexStr = (~flags: string="", regexString: string): t(string) =>
   regex(Js.Re.fromStringWithFlags(regexString, ~flags));
 
 /**
+Matches a decimal value like 123 or 123.456 or 1.23e-3, returned as a string
+
+TODO: this doesn't handle commas correctly with groups of 3
+*/
+let anyUnsignedDecimalWithLeadingDigits: t(string) =
+  regex([%re "/\\d[\\d,]*(?:\\.\\d+)?(?:e-?\\d+)?/i"]);
+
+/**
+Matches a decimal value like .456 or .23e-3, returned as a string
+*/
+let anyUnsignedDecimalWithoutLeadingDigits: t(string) =
+  regex([%re "/\\.\\d+(?:e-?\\d+)?/i"]);
+
+/**
+Matches a decimal value like 123.456 or 1.23e-3 or .456 or .23e-3, returned as a string
+*/
+let anyUnsignedDecimal: t(string) =
+  anyUnsignedDecimalWithLeadingDigits
+  <|> anyUnsignedDecimalWithoutLeadingDigits
+  <?> "Expected an unsigned decimal";
+
+/**
+Matches a decimal that starts with an optional + sign
+ */
+let anyPositiveDecimal: t(string) =
+  opt(str("+")) *> anyUnsignedDecimal <?> "Expected a positive decimal";
+
+/**
+Matches a decimal that starts with an - sign
+ */
+let anyNegativeDecimal: t(string) =
+  (str("-"), anyUnsignedDecimal)
+  |> mapTuple2(Relude.String.concat)
+  <?> "Expected a negative decimal";
+
+/**
+Matches a negative or positive decimal
+ */
+let anyDecimal: t(string) =
+  anyNegativeDecimal <|> anyPositiveDecimal <?> "Expected any decimal";
+
+/**
+Matches a string "true" (case-insensitive)
+ */
+let boolTrue: t(bool) = strIgnoreCase("true") <#> (_ => true);
+
+/**
+Matches a string "false" (case-insensitive)
+ */
+let boolFalse: t(bool) = strIgnoreCase("false") <#> (_ => false);
+
+/**
+Matches true or false
+ */
+let anyBool: t(bool) = boolTrue <|> boolFalse <?> "Expected a bool";
+
+/**
 Matches a (
 */
 let leftParen: t(string) = str("(");
@@ -952,3 +1019,27 @@ Parses a value from between < and >, stripping out extra whitespace inside the <
 */
 let betweenAngles: 'a. t('a) => t('a) =
   pa => between(leftAngle, rightAngle, ws *> pa <* ws);
+
+let doubleQuote: t(string) = str("\"");
+
+let singleQuote: t(string) = str("'");
+
+let backTick: t(string) = str("`");
+
+/**
+Matches a string enclosed in double quotes
+ */
+let betweenDoubleQuotes: t('a) => t('a) =
+  pa => between(str("\""), str("\""), pa);
+
+/**
+Matches a string enclosed in single quotes
+ */
+let betweenSingleQuotes: t('a) => t('a) =
+  pa => between(str("'"), str("'"), pa);
+
+/**
+Matches a string enclosed in backticks (`)
+ */
+let betweenBackTicks: t('a) => t('a) =
+  pa => between(str("`"), str("`"), pa);

@@ -29,7 +29,11 @@ describe("ReludeParse_IPv6", () => {
       ("0:0:0:0:0:0:0:0", IPv6.unsafeFromInts(0, 0, 0, 0, 0, 0, 0, 0), 15),
       ("0:0:0:0:0:0:0:1", IPv6.unsafeFromInts(0, 0, 0, 0, 0, 0, 0, 1), 15),
       ("1:0:0:0:0:0:0:0", IPv6.unsafeFromInts(1, 0, 0, 0, 0, 0, 0, 0), 15),
-      ("00:00:00:00:00:00:00:01", IPv6.unsafeFromInts(0, 0, 0, 0, 0, 0, 0, 1), 23),
+      (
+        "00:00:00:00:00:00:00:01",
+        IPv6.unsafeFromInts(0, 0, 0, 0, 0, 0, 0, 1),
+        23,
+      ),
       (
         "000:000:000:000:000:000:000:001",
         IPv6.unsafeFromInts(0, 0, 0, 0, 0, 0, 0, 1),
@@ -56,6 +60,93 @@ describe("ReludeParse_IPv6", () => {
         22,
       ),
       ("2001::8329", IPv6.unsafeFromInts(8193, 0, 0, 0, 0, 0, 0, 33577), 10),
+      (
+        "ffff::ffff",
+        IPv6.unsafeFromInts(65535, 0, 0, 0, 0, 0, 0, 65535),
+        10,
+      ),
+      (
+        "ffff:ffff::ffff",
+        IPv6.unsafeFromInts(65535, 65535, 0, 0, 0, 0, 0, 65535),
+        15,
+      ),
+      (
+        "ffff:ffff:ffff::ffff",
+        IPv6.unsafeFromInts(65535, 65535, 65535, 0, 0, 0, 0, 65535),
+        20,
+      ),
+      (
+        "ffff:ffff:ffff:ffff::ffff",
+        IPv6.unsafeFromInts(65535, 65535, 65535, 65535, 0, 0, 0, 65535),
+        25,
+      ),
+      (
+        "ffff:ffff:ffff:ffff:ffff::ffff",
+        IPv6.unsafeFromInts(65535, 65535, 65535, 65535, 65535, 0, 0, 65535),
+        30,
+      ),
+      (
+        "ffff:ffff:ffff:ffff:ffff:ffff::ffff",
+        IPv6.unsafeFromInts(
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          0,
+          65535,
+        ),
+        35,
+      ),
+      (
+        "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        IPv6.unsafeFromInts(
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+        ),
+        39,
+      ),
+      (
+        "ffff::ffff:ffff:ffff:ffff:ffff:ffff",
+        IPv6.unsafeFromInts(
+          65535,
+          0,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+          65535,
+        ),
+        35,
+      ),
+      (
+        "ffff::ffff:ffff:ffff:ffff:ffff",
+        IPv6.unsafeFromInts(65535, 0, 0, 65535, 65535, 65535, 65535, 65535),
+        30,
+      ),
+      (
+        "ffff::ffff:ffff:ffff:ffff",
+        IPv6.unsafeFromInts(65535, 0, 0, 0, 65535, 65535, 65535, 65535),
+        25,
+      ),
+      (
+        "ffff::ffff:ffff:ffff",
+        IPv6.unsafeFromInts(65535, 0, 0, 0, 0, 65535, 65535, 65535),
+        20,
+      ),
+      (
+        "ffff::ffff:ffff",
+        IPv6.unsafeFromInts(65535, 0, 0, 0, 0, 0, 65535, 65535),
+        15,
+      ),
     ],
     ((str, exp, pos)) =>
     testParse(IPv6.parser <* eof, str, exp, {pos, str})

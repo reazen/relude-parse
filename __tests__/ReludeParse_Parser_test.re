@@ -604,12 +604,12 @@ describe("ReludeParse_Parser", () => {
     testParse(P.anyDigit |> P.orUnit, "a", (), {pos: 0, str: "a"})
   );
 
-  test("optional hit", () =>
-    testParse(P.anyDigit |> P.optional, "3", Some("3"), {pos: 1, str: "3"})
+  test("opt hit", () =>
+    testParse(P.anyDigit |> P.opt, "3", Some("3"), {pos: 1, str: "3"})
   );
 
-  test("optional miss", () =>
-    testParse(P.anyDigit |> P.optional, "a", None, {pos: 0, str: "a"})
+  test("opt miss", () =>
+    testParse(P.anyDigit |> P.opt, "a", None, {pos: 0, str: "a"})
   );
 
   test("sepBy empty", () =>
@@ -954,67 +954,217 @@ describe("ReludeParse_Parser", () => {
   );
 
   testAll(
-    "anyPositiveInt",
+    "anyUnsignedInt success",
     [
       ("0", 0, 1),
       ("1", 1, 1),
       ("2", 2, 1),
       ("12", 12, 2),
       ("12345", 12345, 5),
-      ("00", 0, 1), // 0 parses as int, leaving the remaining
-      ("01", 0, 1), // 0 parses as int, leaving the remaining
-      ("002", 0, 1) // 0 parses as int, leaving the remaining
     ],
     ((input, expected, pos)) =>
-    testParse(P.anyInt, input, expected, {pos, str: input})
-  );
-
-  testAll("anyPositiveInt fail", ["-1", "-0", "a", "!", ".0"], input =>
-    testParseFail(P.anyPositiveInt, input, 0)
+    testParse(P.anyUnsignedInt <* P.eof, input, expected, {pos, str: input})
   );
 
   testAll(
-    "anyNegativeInt",
+    "anyUnsignedInt fail",
     [
-      ("-0", 0, 2),
-      ("-1", (-1), 2),
-      ("-2", (-2), 2),
-      ("-12", (-12), 3),
-      ("-12345", (-12345), 6),
-      ("-00", 0, 2), // 0 parses as int, leaving the remaining
-      ("-01", 0, 2), // 0 parses as int, leaving the remaining
-      ("-002", 0, 2) // 0 parses as int, leaving the remaining
+      ("-1", 0),
+      ("-0", 0),
+      ("a", 0),
+      ("!", 0),
+      (".0", 0),
+      ("0.", 1),
+      ("00", 1),
+      ("01", 1),
+      ("002", 1),
     ],
-    ((input, expected, pos)) =>
-    testParse(P.anyNegativeInt, input, expected, {pos, str: input})
-  );
-
-  testAll("anyNegativeInt fail", ["1", "0", "a", "!", ".0"], input =>
-    testParseFail(P.anyNegativeInt, input, 0)
+    ((input, pos)) =>
+    testParseFail(P.anyUnsignedInt <* P.eof, input, pos)
   );
 
   testAll(
-    "anyInt",
+    "anyPositiveInt success",
     [
       ("0", 0, 1),
       ("1", 1, 1),
       ("2", 2, 1),
       ("12", 12, 2),
       ("12345", 12345, 5),
-      ("00", 0, 1), // 0 parses as int, leaving the remaining
-      ("01", 0, 1), // 0 parses as int, leaving the remaining
-      ("002", 0, 1), // 0 parses as int, leaving the remaining
+      ("+0", 0, 2),
+      ("+1", 1, 2),
+      ("+2", 2, 2),
+      ("+12", 12, 3),
+      ("+12345", 12345, 6),
+    ],
+    ((input, expected, pos)) =>
+    testParse(P.anyPositiveInt <* P.eof, input, expected, {pos, str: input})
+  );
+
+  testAll(
+    "anyPositiveInt fail",
+    [
+      ("-1", 0),
+      ("-0", 0),
+      ("a", 0),
+      ("!", 0),
+      (".0", 0),
+      ("0.", 1),
+      ("00", 1),
+      ("01", 1),
+      ("002", 1),
+      ("+00", 2),
+      ("+01", 2),
+      ("+002", 2),
+    ],
+    ((input, pos)) =>
+    testParseFail(P.anyPositiveInt <* P.eof, input, pos)
+  );
+
+  testAll(
+    "anyNegativeInt success",
+    [
       ("-0", 0, 2),
       ("-1", (-1), 2),
       ("-2", (-2), 2),
       ("-12", (-12), 3),
       ("-12345", (-12345), 6),
-      ("-00", 0, 2), // 0 parses as int, leaving the remaining
-      ("-01", 0, 2), // 0 parses as int, leaving the remaining
-      ("-002", 0, 2) // 0 parses as int, leaving the remaining
     ],
     ((input, expected, pos)) =>
-    testParse(P.anyInt, input, expected, {pos, str: input})
+    testParse(P.anyNegativeInt <* P.eof, input, expected, {pos, str: input})
+  );
+
+  testAll(
+    "anyNegativeInt fail",
+    [
+      ("1", 0),
+      ("0", 0),
+      ("a", 0),
+      ("!", 0),
+      (".0", 0),
+      ("0.", 0),
+      ("-.0", 1),
+      ("-0.", 2),
+      ("-00", 2),
+      ("-01", 2),
+      ("-002", 2),
+    ],
+    ((input, pos)) =>
+    testParseFail(P.anyNegativeInt <* P.eof, input, pos)
+  );
+
+  testAll(
+    "anyInt success",
+    [
+      ("0", 0, 1),
+      ("1", 1, 1),
+      ("2", 2, 1),
+      ("12", 12, 2),
+      ("12345", 12345, 5),
+      ("-0", 0, 2),
+      ("-1", (-1), 2),
+      ("-2", (-2), 2),
+      ("-12", (-12), 3),
+      ("-12345", (-12345), 6),
+    ],
+    ((input, expected, pos)) =>
+    testParse(P.anyInt <* P.eof, input, expected, {pos, str: input})
+  );
+
+  testAll(
+    "anyInt fail",
+    [
+      ("a", 0),
+      ("!", 0),
+      (".0", 0),
+      ("0.", 1),
+      ("-0.", 2),
+      ("00", 1),
+      ("01", 1),
+      ("002", 1),
+      ("-00", 2),
+      ("-01", 2),
+      ("-002", 2),
+    ],
+    ((input, pos)) =>
+    testParseFail(P.anyInt <* P.eof, input, pos)
+  );
+
+  testAll(
+    "anyDecimal success",
+    [
+      ("0", "0", 1),
+      ("1", "1", 1),
+      ("12", "12", 2),
+      (".0", ".0", 2),
+      (".00", ".00", 3),
+      (".001", ".001", 4),
+      ("0.0", "0.0", 3),
+      ("0.00", "0.00", 4),
+      ("0.000", "0.000", 5),
+      ("0.001", "0.001", 5),
+      ("1.000", "1.000", 5),
+      ("1.002", "1.002", 5),
+      ("9.87e3", "9.87e3", 6),
+      ("9.87e33", "9.87e33", 7),
+      ("9.87e-3", "9.87e-3", 7),
+      ("9.87e-33", "9.87e-33", 8),
+      ("9.87E3", "9.87E3", 6),
+      ("9.87E33", "9.87E33", 7),
+      ("9.87E-3", "9.87E-3", 7),
+      ("9.87E-33", "9.87E-33", 8),
+    ],
+    ((str, expected, pos)) =>
+    testParse(P.anyDecimal <* P.eof, str, expected, {pos, str})
+  );
+
+  testAll(
+    "anyDecimal failure",
+    [
+      ("0.", 1), // This could arguably parse, but it doesn't right now
+      ("a", 0),
+      ("-a", 1),
+      ("!", 0),
+      (".0a", 2),
+      ("-0.a", 2),
+      ("0.a", 1),
+      ("1.2e-a", 3),
+    ],
+    ((str, pos)) =>
+    testParseFail(P.anyDecimal <* P.eof, str, pos)
+  );
+
+  testAll(
+    "boolTrue",
+    [("true", true, 4), ("TRUE", true, 4), ("TrUe", true, 4)],
+    ((str, exp, pos)) =>
+    testParse(P.boolTrue <* P.eof, str, exp, {str, pos})
+  );
+
+  testAll(
+    "boolFalse",
+    [("false", false, 5), ("FALSE", false, 5), ("fALse", false, 5)],
+    ((str, exp, pos)) =>
+    testParse(P.boolFalse <* P.eof, str, exp, {str, pos})
+  );
+
+  testAll(
+    "anyBool success",
+    [
+      ("true", true, 4),
+      ("TRUE", true, 4),
+      ("TrUe", true, 4),
+      ("false", false, 5),
+      ("FALSE", false, 5),
+      ("fALse", false, 5),
+    ],
+    ((str, exp, pos)) =>
+    testParse(P.anyBool <* P.eof, str, exp, {str, pos})
+  );
+
+  testAll(
+    "anyBool false", [("tru", 0), ("fal", 0), ("a", 0)], ((str, pos)) =>
+    testParseFail(P.anyBool <* P.eof, str, pos)
   );
 
   test("anyStr empty", () =>
@@ -1374,6 +1524,33 @@ describe("ReludeParse_Parser", () => {
       "<  456  >",
       "456",
       {pos: 9, str: "<  456  >"},
+    )
+  );
+
+  test("betweenDoubleQuotes", () =>
+    testParse(
+      P.betweenDoubleQuotes(P.anyNonEmptyDigits),
+      "\"123\"",
+      "123",
+      {pos: 5, str: "\"123\""},
+    )
+  );
+
+  test("betweenSingleQuotes", () =>
+    testParse(
+      P.betweenSingleQuotes(P.anyNonEmptyDigits),
+      "'123'",
+      "123",
+      {pos: 5, str: "'123'"},
+    )
+  );
+
+  test("betweenBackTicks", () =>
+    testParse(
+      P.betweenBackTicks(P.anyNonEmptyDigits),
+      "`123`",
+      "123",
+      {pos: 5, str: "`123`"},
     )
   );
 });
