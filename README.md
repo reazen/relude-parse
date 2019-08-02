@@ -356,7 +356,9 @@ let make = (a, b, c, d) => IPv4(a, b, c, d);
 |> mapTuple4(make)
 |> runParser("127.0.0.1");
 
-// Using nested flatMaps and a final map at the end
+// Using nested flatMaps and a final map at the end.
+// These are nested because we have to collect each value as we go, and it has to
+// be in scope at the end when we want to construct our final value.
 // Note: language support for sequences of monadic binds (e.g. do notation or the
 // upcoming let+/let* bindings in OCaml, this becomes a beautiful, flat expression,
 // almost like imperative code, but with pure FP data structures and functions!
