@@ -16,6 +16,8 @@ module PosString = {
 module ParseError = {
   type t =
     | ParseError(string);
+
+  let show: t => string = (ParseError(message)) => message;
 };
 
 type success('a) = {
