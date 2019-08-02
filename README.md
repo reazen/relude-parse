@@ -47,6 +47,10 @@ If you just want to live your life, use method 1.
 
 For examples below, I'm going to assume method 3.
 
+As a side note, the relude ecosystem prefers the `|>` pipe operator over `->`, so most
+functions are "significant data last" style, and the "significant data" is typically
+a value of type `Parser.t('a)`.
+
 # Parsers
 
 `ReludeParse.Parser.t('a)` is a data type which encapsulates the ability to parse a string
@@ -63,24 +67,35 @@ Someday this may improve.
 
 # Run a parser
 
-A parser will attempt to consume input from a string until it can successful finish and produce
-a value or fail to produce a value.  The parser will only consume enough of the string to satisfy
-itself, and will leave the rest of the string for the next parser (if any).
+A parser will attempt to consume input from a string until it can successfully finish and produce
+a value or fail.  The parser will only consume enough of the string to satisfy
+its own parsing needs (whatever it needs to produce the final value), and will leave the rest of the string for the next parser (if any).
+
+To run a parser, simply pipe (or pass) it into the `P.runParser` function, along with the input string:
+
+Success example:
 
 ```ocaml
 // anyDigit will attempt to consume a single character, and succeeds if that character
 // is a digit 0-9
+
+// Pipe operator |>
+
 P.anyDigit |> P.runParser("1") // Belt.Result.Ok("1")
+
+// Or normal function application
+
+P.runParser("1", P.anyDigit)
 ```
 
-Or fail to parse:
+Failure example:
 
 ```ocaml
 P.anyDigit |> P.runParser("!") // Belt.Result.Error(ParseError("Expected a digit"))
 ```
 
-In the event of a failed parse, parsers will back-track in case a
-successive/alternative parser can pick-up where the previous failed.
+In the event of a failed parse, parsers will (in most cases) back-track so that an alternative
+parser (if supplied) can pick-up where the previous failed.
 
 There is also a `P.unParser` function, which gives you access to more of the internals
 in the event of success or failure.
