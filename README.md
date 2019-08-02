@@ -28,7 +28,7 @@ npm install --save-dev relude relude-parse
 In ReasonML/Bucklescript, you can get access to a module's functions in a variety of ways, here
 are a few examples:
 
-```ocaml
+```reason
 // Method 1: Global open (not recommended)
 open ReludeParse.Parser;
 let _ = anyDigit <* eof |> runParser("1");
@@ -75,7 +75,7 @@ To run a parser, simply pipe (or pass) it into the `P.runParser` function, along
 
 Success example:
 
-```ocaml
+```reason
 // anyDigit will attempt to consume a single character, and succeeds if that character
 // is a digit 0-9
 
@@ -90,7 +90,7 @@ P.runParser("1", P.anyDigit)
 
 Failure example:
 
-```ocaml
+```reason
 P.anyDigit |> P.runParser("!") // Belt.Result.Error(ParseError("Expected a digit"))
 ```
 
@@ -104,7 +104,7 @@ in the event of success or failure.
 
 A `RelueParse.Parser` is a `functor`, so we can map a pure function over the parser's value.
 
-```ocaml
+```reason
 // Warning: int_of_string is unsafe (can throw) - this is just an example
 P.anyDigit |> P.map(int_of_string) |> P.runParser("1") // Belt.Result.Ok(1)
 
@@ -137,7 +137,7 @@ a known data type for simplicity.
 A `ReludeParse.Parser.t('a)` is an `applicative functor`, so we can combine multiple parsers 
 together using a variety of techniques.
 
-```ocaml
+```reason
 // Combine two parsers into a tuple of the results (assuming all succeed)
 P.tuple2(P.anyDigit, P.anyDigit) |> P.runParser("12") // Belt.Result.Ok(("1", "2"))
 
@@ -199,7 +199,7 @@ you can't do that with the applicative-based functions, because none of those fu
 access to the inner value, nor give you the opportunity to produce a new Applicative value based
 on the inner value.
 
-```ocaml
+```reason
 // Lift a pure value into a parser
 // As you can see the parser just produces the given value regardless of the string.
 P.pure(3)
@@ -234,7 +234,7 @@ You can also use the monadic behavior to optionally fail a parse inside a
 because map uses a pure function from `'a => 'b`, so there's no way to indicate failure
 of the parse.
 
-```ocaml
+```reason
 P.anyDigitAsInt
 >>= (
   count =>
@@ -255,7 +255,7 @@ P.anyDigitAsInt
 The `filter` function in `ReludeParse` is basically for this purpose.  Filter produces its
 own generic error message if the predicate fails, but you can customize it like below:
 
-```ocaml
+```reason
 P.anyDigitAsInt
 |> P.filter(a => a > 5)
 <?> "Expected an int greater than 5";
@@ -268,7 +268,7 @@ if it fails, try another, as many times as you want.
 
 The `<|>` operator is used for this - think of the `<|>` operator as an `orElse` function.
 
-```ocaml
+```reason
 P.anyDigit <|> P.anyAlpha |> P.runParser("9") // Belt.Result.Ok("9")
 P.anyDigit <|> P.anyAlpha |> P.runParser("a") // Belt.Result.Ok("a")
 P.anyDigit <|> P.anyAlpha |> P.runParser("!") // Belt.Result.Error(...)
@@ -276,14 +276,14 @@ P.anyDigit <|> P.anyAlpha |> P.runParser("!") // Belt.Result.Error(...)
 
 `<|>` can be chained as many times as you want - it attempts each parser left-to-right.
 
-```ocaml
+```reason
 P.str("a") <|> P.str("b") <|> P.str("c") <|> P.str("d") ...and so on
 ```
 
 If none of the parsers succeed, it will return the error of the last parser, so a common
 technique is to use `<?>` to add a custom error message at the end
 
-```ocaml
+```reason
 P.str("a") <|> P.str("b") <|> P.str("c") <?> "Expected a, b, or c"
 ```
 
@@ -291,7 +291,7 @@ Sometimes when using `<|>` with more complex parsers, the first parser might con
 before failing, which might mess up the next parser in the `<|>` chain.  Use the `tries`
 function to force a parser to back-track all the way to it's original position if it fails.
 
-```ocaml
+```reason
 // Without tries, this fails, because the first parser consumes the 9, then fails,
 // but the next parser wants to consume a digit then a letter.  Using tries makes the
 // parser fully back-track on failure if it had consumed any input.
@@ -306,7 +306,7 @@ Use the `<?>` operator to put a custom error message on a parser.  This is usefu
 if you are composing a more complex parser from smaller parsers, and want a more meaningful error
 message if the parser fails.
 
-```ocaml
+```reason
 P.many1(P.anyDigit)
 <?> "Expected one or more digits"
 |> P.runParser("abc") // Belt.Result.Error(ParseError("Expected one or more digits"))
@@ -318,7 +318,7 @@ To make sure that all the input in the string has been consumed, use the `eof` (
 It's common to use `<* eof` to parse the end of input, because `<*` will just keep what's on
 the left side of `eof`.
 
-```ocaml
+```reason
 P.anyDigit <* P.eof // Succeeds for "3" but fails for "3 "
 ```
 
@@ -328,7 +328,7 @@ Use `tap` to inspect the result of a successful parse, and the parse position.
 
 Use the `tapLog` function to inject some basic logging anywhere in a parser composition.
 
-```ocaml
+```reason
 anyDigit *> anyDigit *> anyAlpha |> tapLog // etc.
 ```
 
@@ -341,7 +341,7 @@ E.g. `127.0.0.1`
 There are many different ways to compose a parser to parse values like this.  Below are just
 some examples to show different techniques.
 
-```ocaml
+```reason
 type IPv4 = | IPv4(int, int, int, int);
 let make = (a, b, c, d) => IPv4(a, b, c, d);
 
