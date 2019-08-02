@@ -49,7 +49,19 @@ For examples below, I'm going to assume method 3.
 
 As a side note, the relude ecosystem prefers the `|>` pipe operator over `->`, so most
 functions are "significant data last" style, and the "significant data" is typically
-a value of type `Parser.t('a)`.
+a value of type `Parser.t('a)`.  This allows you do do things like:
+
+```reason
+P.anyAlpha |> P.sepBy(str(","))
+```
+
+which is the same as below:
+
+```reason
+P.sepBy(str(","), P.anyAlpha)
+```
+
+Luckily, either way is perfectly legit, so use whichever style you prefer.
 
 # Parsers
 
@@ -98,7 +110,8 @@ In the event of a failed parse, parsers will (in most cases) back-track so that 
 parser (if supplied) can pick-up where the previous failed.
 
 There is also a `P.unParser` function, which gives you access to more of the internals
-in the event of success or failure.
+in the event of success or failure.  It's called `unParser` because it unwraps or "lowers" a
+value of type `Parser.t('a)` to the raw parsing function contained within.
 
 # Mapping a function over a parser
 
@@ -116,6 +129,8 @@ int_of_string <$> P.anyDigit |> P.runParser("1");
 // When you see `<#>` just think `.map(...)` from JavaScript
 P.anyDigit <#> int_of_string |> P.runParser("1");
 ```
+
+Note: see the monad section for an information on how to handle or produce errors while parsing.
 
 `Parser.t('a)` comes with all the bells and whistles that are granted to all
 `functors` in relude. This includes:
@@ -146,7 +161,7 @@ P.anyDigit <&> P.anyDigit |> P.runParser("12") // Belt.Result.Ok(("1", "2"))
 
 // Combine more parsers using tuple3 up to tuple5
 P.tuple3(P.anyDigit, P.anyDigit, P.anyDigit)
-|> P.runParser("123")
+|> P.runParser("123") // Belt.Result.Ok(("1", "2", "3"))
 
 // Combine parse results using a function via map2 through map5
 P.map2((a, b) => a + b, P.anyDigitAsInt, P.anyDigitAsInt)
@@ -192,22 +207,29 @@ Many of these functions and operators come for free for any Applicative via [Rel
 # Sequencing parsers (via Monads)
 
 A `Parser.t('a)` is also a `monad`, so you can put pure values directly into a parser using `pure`,
-and more importantly, you can sequence parsers using `flatMap`, `bind`, or the `>>=` operator,
-which all basically do the same thing - the take a `Parser.t('a)`, a function from `'a => Parser.t('b)` and give you a `Parser.t('b)`.  What this basically means is that you can "run" any monad to
-extract a value, then produce a new Monadic value with which to continue processing.  Note that
-you can't do that with the applicative-based functions, because none of those functions give you
-access to the inner value, nor give you the opportunity to produce a new Applicative value based
-on the inner value.
+and more importantly, you can sequence parsers using `flatMap`, `bind`, or the `>>=` operator.
+`bind`, `flatMap` and `>>=` all basically do the same thing - the take a `Parser.t('a)`, a function from `'a => Parser.t('b)` and give you a `Parser.t('b)`.  What this basically means is that you can "run" a parser to
+produce a value (note: I don't mean return a value, but produce a value inside your monadic flow), then use that value to create a new parser with which to continue processing.  Note that you can't do that with the functors and applicative-based parsing, because `map`/`apply`/`<*>` and friends don't give you the opportunity to produce a new parser based on the value - you can only apply functions inside the context of a parser.
+
+For intuition, `flatMap` is an apt name for this function because if you have a `myToOfA: t('a)`, a function `aToTOfB: 'a => t('b)`, and you do `myTOfA |> map(aToTOfB)` you'll get a `t(t('b))`.  A monad has the ability to "flatten" itself when in a nested structure like this, i.e. `flatten: t(t('b)) => t('b)`.  In some languages `flatten` is often named `join` - like you are flattening or joining a nested structure into a single structure.  `flatMap` can be implemented in terms of `map` and `flatten`, and flatten can be implmeented in terms of `flatMap`.
+
+So `flatMap` is mapping a monadic function `'a => t('b)` over a `t('a)`, and then flattening the resulting `t(t('b))` to just `t('b)`.
+
+The true power of monads is the ability to produce a new monadic value (i.e. a new parser) mid-flow, which can be used for producing and handling errors, or forking the parse flow to do something different, based on what you've previously parsed.
+
+Note that monads have "fail-fast" semantics, because if a parser fails to produce a value, it's
+not possible for the next parser to accept a value (because there is none).  In other words,
+if a parser fails at some point in a chain, the rest of the parsers will not run.
 
 ```reason
-// Lift a pure value into a parser
+// Lift a pure value into a parser.
 // As you can see the parser just produces the given value regardless of the string.
 P.pure(3)
 |> runParser("abcdef") // Belt.Result.Ok(3)
 
-// Sequence parse operations using flatMap
+// Sequence parse operations using flatMap.
 // In this example we read a single digit as an int, then use that value
-// to read a series of letters, and expect to consume the whole input
+// to read a series of letters, and expect to consume the whole input.
 // This is sequencing because we use the result of one parser to determine
 // the next parser to run.
 P.anyDigitAsInt
@@ -215,24 +237,26 @@ P.anyDigitAsInt
 |> P.map(chars => Relude.List.String.join(chars))
 |> P.runParser("3abc"); // Belt.Result.Ok("abc")
 
-// Sequence using >>= (bind) and <#> (map) operators
-// If you are coming from JS:
-// Don't be afraid of the operators - when yo usee >>= read ".flatMap(...)"
-// and when you see "<#>" read ".map(...)"
+// Sequence using >>= (flatMap/bind) and <#> (map) operators.
+// If you are coming from JS -
+// Don't be afraid of the operators - when you see >>= read ".flatMap(...)"
+// and when you see "<#>" read ".map(...)".  Eventually these will become
+// second nature.
 P.anyDigitAsInt
 >>= (count => P.times(count, P.anyAlpha) <* P.eof)
 <#> Relude.List.String.join
 |> P.runParser("3abc"); // Belt.Result.Ok("abc")
 ```
 
-Many of these functions come for free for any Monad via Relude's [MonadExtensions](https://github.com/reazen/relude/blob/master/src/extensions/Relude_Extensions_Monad.re)
+Many of these functions come for free for any Monad via [Relude Monad Extensions](https://github.com/reazen/relude/blob/master/src/extensions/Relude_Extensions_Monad.re)
 
-# Add validation in a parse chain
+# Add validation and error handling in a parse chain
 
 You can also use the monadic behavior to optionally fail a parse inside a
 `bind`/`flatMap`/`>>=` function.  Note that you can't fail a parse inside a `map`
 because map uses a pure function from `'a => 'b`, so there's no way to indicate failure
-of the parse.
+of the parse - you are only allowed to produce a new value `'b` *inside* the context of an existing
+parser.
 
 ```reason
 P.anyDigitAsInt
@@ -240,8 +264,8 @@ P.anyDigitAsInt
   count =>
     if (count >= 5) {
       // P.fail is a parser that always fails with the given message
-      // just like P.pure always succeeds with the given value
-      // Using >>= and fail is a common way to inject validations
+      // just like P.pure always succeeds with the given value.
+      // Using >>= and fail is a common way to inject validations and raise errors.
       P.fail("The count cannot be >= 5");
     } else {
       // Now that we have a valid count, carry on
@@ -342,7 +366,7 @@ There are many different ways to compose a parser to parse values like this.  Be
 some examples to show different techniques.
 
 ```reason
-type IPv4 = | IPv4(int, int, int, int);
+type t = | IPv4(int, int, int, int);
 let make = (a, b, c, d) => IPv4(a, b, c, d);
 
 // Using a tuple and mapTuple4
@@ -393,6 +417,11 @@ anyPositiveShort
 )
 |> runParser("127.0.0.1");
 
+// With a monadic flow, another technique is to map each successive result into
+// an ever-expanding tuple, and pass the values along that way. This allows you
+// to have a more flat structure, at the
+// expense of wrapping and unwrapping tuples at each step.
+
 // Using <$> and <*> (with <* and *> helpers)
 // Our make function is (int, int, int, int) => IPv4
 // The first map <$> creates a `Parser.t((int, int, int) => IPv4)`
@@ -422,8 +451,11 @@ anyPositiveShort
   shorts =>
     switch (shorts) {
     | [a, b, c, d] =>
-      pure(ReludeParse.IPv4.unsafeFromInts(a, b, c, d))
+      // Use pure here because we need to wrap the result in a parser to satisfy
+      // the type signature of the >>= function
+      pure(make(a, b, c, d))
     | _ => fail("Expected exactly 4 shorts separated by .")
+           // fail produces a `Parser.t(_)` that will always fail
     }
 )
 |> runParser("127.0.0.1")
