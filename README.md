@@ -9,6 +9,8 @@
 ReasonML/Bucklescript, built on top of the functional programming types and
 type classes provided by [Relude](https://github.com/reazen/relude).
 
+`ReludeParse` was influenced by [purescript-string-parsers](https://github.com/purescript-contrib/purescript-string-parsers), [parsihax](https://github.com/deathbeam/parsihax), and [atto](https://github.com/tpolecat/atto), and several of the parsers in the Haskell ecosystem.
+
 # Getting started
 
 ## Install the library
