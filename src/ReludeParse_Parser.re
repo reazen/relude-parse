@@ -856,7 +856,7 @@ let regex: Js.Re.t => t(string) =
         let flags = Js.Re.flags(regex);
         let source = Js.Re.source(regex);
         let caretSource =
-          if (Relude.String.startsWith("^", source)) {
+          if (Relude.String.startsWith(~search="^", source)) {
             source;
           } else {
             "^" ++ source;

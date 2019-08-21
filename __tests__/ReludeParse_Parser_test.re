@@ -1351,7 +1351,9 @@ describe("ReludeParse_Parser", () => {
   let allAlphaDigitChars = allAlphaChars ++ "0123456789";
 
   testAll(
-    "anyLowerCaseChar", allLowerCaseChars |> Relude.String.splitList(""), c =>
+    "anyLowerCaseChar",
+    allLowerCaseChars |> Relude.String.splitList(~delimiter=""),
+    c =>
     testParse(P.anyLowerCaseChar, c, c, {pos: 1, str: c})
   );
 
@@ -1360,7 +1362,9 @@ describe("ReludeParse_Parser", () => {
   );
 
   testAll(
-    "anyUpperCaseChar", allUpperCaseChars |> Relude.String.splitList(""), c =>
+    "anyUpperCaseChar",
+    allUpperCaseChars |> Relude.String.splitList(~delimiter=""),
+    c =>
     testParse(P.anyUpperCaseChar, c, c, {pos: 1, str: c})
   );
 
@@ -1368,12 +1372,15 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyUpperCaseChar, c, 0)
   );
 
-  testAll("anyAlpha", allAlphaChars |> Relude.String.splitList(""), c =>
+  testAll(
+    "anyAlpha", allAlphaChars |> Relude.String.splitList(~delimiter=""), c =>
     testParse(P.anyAlpha, c, c, {pos: 1, str: c})
   );
 
   testAll(
-    "anyAlphaOrDigit", allAlphaDigitChars |> Relude.String.splitList(""), c =>
+    "anyAlphaOrDigit",
+    allAlphaDigitChars |> Relude.String.splitList(~delimiter=""),
+    c =>
     testParse(P.anyAlphaOrDigit, c, c, {pos: 1, str: c})
   );
 
