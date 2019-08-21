@@ -268,8 +268,9 @@ describe("Tutorial", () => {
       )
       |> mapTuple4(ReludeParse.IPv4.unsafeFromInts)
       |> runParser("127.0.0.1")
+      |> Relude.Result.map(ReludeParse.IPv4.toTuple)
       |> expect
-      |> toEqual(Belt.Result.Ok(ReludeParse.IPv4.IPv4(127, 0, 0, 1)))
+      |> toEqual(Belt.Result.Ok((127, 0, 0, 1)))
     )
   );
 
@@ -305,8 +306,9 @@ describe("Tutorial", () => {
           )
       )
       |> runParser("127.0.0.1")
+      |> Relude.Result.map(ReludeParse.IPv4.toTuple)
       |> expect
-      |> toEqual(Belt.Result.Ok(ReludeParse.IPv4.IPv4(127, 0, 0, 1)))
+      |> toEqual(Belt.Result.Ok((127, 0, 0, 1)))
     )
   );
 
@@ -321,8 +323,9 @@ describe("Tutorial", () => {
       <* str(".")
       <*> anyPositiveShort
       |> runParser("127.0.0.1")
+      |> Relude.Result.map(ReludeParse.IPv4.toTuple)
       |> expect
-      |> toEqual(Belt.Result.Ok(ReludeParse.IPv4.IPv4(127, 0, 0, 1)))
+      |> toEqual(Belt.Result.Ok((127, 0, 0, 1)))
     )
   );
 
@@ -339,8 +342,9 @@ describe("Tutorial", () => {
           }
       )
       |> runParser("127.0.0.1")
+      |> Relude.Result.map(ReludeParse.IPv4.toTuple)
       |> expect
-      |> toEqual(Belt.Result.Ok(ReludeParse.IPv4.IPv4(127, 0, 0, 1)))
+      |> toEqual(Belt.Result.Ok((127, 0, 0, 1)))
     )
   );
 });

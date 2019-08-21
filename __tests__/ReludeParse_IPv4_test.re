@@ -9,7 +9,8 @@ let (testParse, testParseFail) =
 
 describe("ReludeParse_IPv4", () => {
   test("show", () =>
-    expect(IPv4.show(IPv4(127, 0, 0, 1))) |> toEqual("127.0.0.1")
+    expect(IPv4.show(IPv4.unsafeFromInts(127, 0, 0, 1)))
+    |> toEqual("127.0.0.1")
   );
 
   testAll(
@@ -37,5 +38,16 @@ describe("ReludeParse_IPv4", () => {
     ],
     ((str, pos)) =>
     testParseFail(IPv4.parser, str, pos)
+  );
+
+  test("parseOption (success)", () =>
+    expect(IPv4.parseOption("0.0.0.0"))
+    |> toEqual(Some(IPv4.unsafeFromInts(0, 0, 0, 0)))
+  );
+
+  test("unsafeFromString (fails with exception)", () =>
+    expect(() =>
+      IPv4.unsafeFromString("123")
+    ) |> toThrow
   );
 });

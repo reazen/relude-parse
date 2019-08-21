@@ -33,5 +33,6 @@ let parse: string => Belt.Result.t(t, Parser.ParseError.t) =
 
 let parseOption: string => option(t) = parse >> Result.getOk;
 
-let unsafeFromString = str =>
-  Result.fold(e => failwith(Parser.ParseError.show(e)), id, parse(str));
+let unsafeFromString: string => t =
+  str =>
+    Result.fold(e => failwith(Parser.ParseError.show(e)), id, parse(str));

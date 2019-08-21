@@ -7,12 +7,12 @@
 type t;
 
 /**
- * Turns a `UUID.t` into a valid string representation, including hyphens.
+ * Turn a `UUID.t` into a valid string representation, including hyphens.
  */
 let show: t => string;
 
 /**
- * A Parser.t that can produce UUID values.
+ * A `Parser.t` that can produce UUID values.
  */
 let parser: ReludeParse_Parser.t(t);
 
@@ -23,7 +23,8 @@ let parser: ReludeParse_Parser.t(t);
 let parse: string => Belt.Result.t(t, ReludeParse_Parser.ParseError.t);
 
 /**
- * Run the parser, but discard the ParseError and return a simple `option(t)`
+ * Attempt to parse a given `string`, discarding the ParseError and returning a
+ * simple `option(t)`
  */
 let parseOption: string => option(t);
 
