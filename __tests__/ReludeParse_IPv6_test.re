@@ -165,4 +165,21 @@ describe("ReludeParse_IPv6", () => {
     ((str, pos)) =>
     testParseFail(IPv6.parser <* eof, str, pos)
   );
+
+  test("parseOption (success)", () =>
+    expect(IPv6.parseOption("ffff::ffff:ffff:ffff"))
+    |> toEqual(
+         Some(IPv6.unsafeFromInts(65535, 0, 0, 0, 0, 65535, 65535, 65535)),
+       )
+  );
+
+  test("parseOption (failure)", () =>
+    expect(IPv6.parseOption("z:z:z:z:z:z:z:z")) |> toEqual(None)
+  );
+
+  test("unsafeFromString (throws)", () =>
+    expect(() =>
+      IPv6.unsafeFromString("x")
+    ) |> toThrow
+  );
 });
