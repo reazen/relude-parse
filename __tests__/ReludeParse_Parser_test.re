@@ -1305,6 +1305,16 @@ describe("ReludeParse_Parser", () => {
     testParse(P.ws, "   \t \r \n", (), {str: "   \t \r \n", pos: 8})
   );
 
+  test("ws leading", () => {
+    let x =
+      ((a, b) => a + b)
+      <$> P.ws
+      *> P.anyDigitAsInt
+      <*> P.anyDigitAsInt
+      |> P.runParser("   34");
+    expect(x) |> toEqual(Belt.Result.Ok(7));
+  });
+
   test("anyCharNotIn success", () =>
     testParse(P.anyCharNotIn(["a", "b", "c"]), "x", "x", {pos: 1, str: "x"})
   );
