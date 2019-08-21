@@ -114,7 +114,7 @@ let groups: P.t(t) = {
 
     | NonEmpty(a, [0]) => pure(unsafeFromInts(a, 0, 0, 0, 0, 0, 0, 0))
 
-    | _ => fail("Failed to parse IPv6 address")
+    | NonEmpty(_) => fail("Failed to parse IPv6 address")
   );
 };
 

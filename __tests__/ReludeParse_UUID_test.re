@@ -12,7 +12,7 @@ describe("ReludeParse_UUID", () => {
     "show",
     [
       (
-        UUID.UUID("00000000-0000-0000-0000-000000000000"),
+        UUID.unsafeFromString("00000000-0000-0000-0000-000000000000"),
         "00000000-0000-0000-0000-000000000000",
       ),
     ],
@@ -25,16 +25,22 @@ describe("ReludeParse_UUID", () => {
     [
       (
         "00000000-0000-0000-0000-000000000000",
-        UUID.UUID("00000000-0000-0000-0000-000000000000"),
+        UUID.unsafeFromString("00000000-0000-0000-0000-000000000000"),
       ),
       (
         "01234567-89ab-cdef-aaaa-0000aaaaffff",
-        UUID.UUID("01234567-89ab-cdef-aaaa-0000aaaaffff"),
+        UUID.unsafeFromString("01234567-89ab-cdef-aaaa-0000aaaaffff"),
       ),
     ],
     ((str, exp)) =>
     testParse(UUID.parser, str, exp, {pos: 36, str})
   );
+
+  test("parse/show round trip", () => {
+    let uuid = "01234567-89ab-cdef-aaaa-0000aaaaffff";
+    expect(UUID.parse(uuid) |> Relude.Result.map(UUID.show))
+    |> toEqual(Relude.Result.ok(uuid));
+  });
 
   testAll(
     "invalid",
