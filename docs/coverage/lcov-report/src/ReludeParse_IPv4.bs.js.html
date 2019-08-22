@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Code coverage report for ReludeParse_UUID.bs.js</title>
+    <title>Code coverage report for src/ReludeParse_IPv4.bs.js</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="prettify.css" />
-    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(sort-arrow-sprite.png);
+            background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -16,13 +16,13 @@
 <div class='wrapper'>
   <div class='pad1'>
     <h1>
-      <a href="index.html">All files</a> ReludeParse_UUID.bs.js
+      <a href="../index.html">All files</a> / <a href="index.html">src</a> ReludeParse_IPv4.bs.js
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>14/14</span>
+        <span class='fraction'>10/10</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
@@ -32,12 +32,12 @@
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>3/3</span>
+        <span class='fraction'>2/2</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>14/14</span>
+        <span class='fraction'>10/10</span>
       </div>
     </div>
     <p class="quiet">
@@ -75,64 +75,76 @@
 <a name='L27'></a><a href='#L27'>27</a>
 <a name='L28'></a><a href='#L28'>28</a>
 <a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Generated by BUCKLESCRIPT VERSION 5.0.6, PLEASE EDIT WITH CARE
 'use strict';
 &nbsp;
 var Curry = require("bs-platform/lib/js/curry.js");
 var ReludeParse_Parser = require("./ReludeParse_Parser.bs.js");
-var Relude_Extensions_List = require("relude/lib/js/src/extensions/Relude_Extensions_List.bs.js");
+&nbsp;
+function unsafeFromInts(a, b, c, d) {
+  return /* IPv4 */[
+          a,
+          b,
+          c,
+          d
+        ];
+}
 &nbsp;
 function show(param) {
-  return param[0];
+  return String(param[0]) + ("." + (String(param[1]) + ("." + (String(param[2]) + ("." + String(param[3]))))));
 }
 &nbsp;
-function hexDigits(count) {
-  return Curry._2(ReludeParse_Parser.$less$hash$great, ReludeParse_Parser.times(count, ReludeParse_Parser.anyHexDigit), Relude_Extensions_List.$$String[/* join */12]);
-}
-&nbsp;
-var hyphen = ReludeParse_Parser.str("-");
-&nbsp;
-var parser = Curry._2(ReludeParse_Parser.$less$star$great, Curry._2(ReludeParse_Parser.$less$star, Curry._2(ReludeParse_Parser.$less$star$great, Curry._2(ReludeParse_Parser.$less$star, Curry._2(ReludeParse_Parser.$less$star$great, Curry._2(ReludeParse_Parser.$less$star, Curry._2(ReludeParse_Parser.$less$star$great, Curry._2(ReludeParse_Parser.$less$star, Curry._2(ReludeParse_Parser.$less$$great, (function (a, b, c, d, e) {
-                                        return /* UUID */[a + ("-" + (b + ("-" + (c + ("-" + (d + ("-" + e)))))))];
-                                      }), hexDigits(8)), hyphen), hexDigits(4)), hyphen), hexDigits(4)), hyphen), hexDigits(4)), hyphen), hexDigits(12));
+var parser = Curry._2(ReludeParse_Parser.mapTuple4, unsafeFromInts, /* tuple */[
+      Curry._2(ReludeParse_Parser.$less$star, ReludeParse_Parser.anyPositiveShort, ReludeParse_Parser.str(".")),
+      Curry._2(ReludeParse_Parser.$less$star, ReludeParse_Parser.anyPositiveShort, ReludeParse_Parser.str(".")),
+      Curry._2(ReludeParse_Parser.$less$star, ReludeParse_Parser.anyPositiveShort, ReludeParse_Parser.str(".")),
+      ReludeParse_Parser.anyPositiveShort
+    ]);
 &nbsp;
 var P = 0;
 &nbsp;
 exports.P = P;
+exports.unsafeFromInts = unsafeFromInts;
 exports.show = show;
-exports.hexDigits = hexDigits;
-exports.hyphen = hyphen;
 exports.parser = parser;
-/* hyphen Not a pure module */
+/* parser Not a pure module */
 &nbsp;</pre></td></tr>
 </table></pre>
 <div class='push'></div><!-- for sticky footer -->
@@ -141,7 +153,7 @@ exports.parser = parser;
   Code coverage
 </div>
 </div>
-<script src="prettify.js"></script>
+<script src="../prettify.js"></script>
 <script>
 window.onload = function () {
         if (typeof prettyPrint === 'function') {
@@ -149,7 +161,7 @@ window.onload = function () {
         }
 };
 </script>
-<script src="sorter.js"></script>
-<script src="block-navigation.js"></script>
+<script src="../sorter.js"></script>
+<script src="../block-navigation.js"></script>
 </body>
 </html>

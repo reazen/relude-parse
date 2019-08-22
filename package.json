@@ -15,19 +15,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/andywhite37/relude-parse.git"
+    "url": "git+https://github.com/reazen/relude-parse.git"
   },
   "author": "Reazen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/andywhite37/relude-parse/issues"
+    "url": "https://github.com/reazen/relude-parse/issues"
   },
-  "homepage": "https://github.com/andywhite37/relude-parse#readme",
+  "homepage": "https://github.com/reazen/relude-parse#readme",
   "devDependencies": {
     "@glennsl/bs-jest": "~0.4.8",
     "bs-abstract": "~0.17.0",
     "bs-platform": "~5.0.6",
-    "relude": "~0.18.0"
+    "relude": "~0.25.1"
   },
   "peerDependencies": {
     "bs-abstract": "~0.17.0",

@@ -11,5 +11,9 @@ npm-debug.log
 /lib/bs/
 *.bs.js
 
+# Tests
+docs/coverage/clover.xml
+docs/coverage/lcov.info
+
 # Git
 *.orig

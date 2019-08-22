@@ -1,4 +1,4 @@
-let ((<<), (>>)) = Relude.Function.Infix.((<<), (>>));
+open Relude.Globals;
 
 module Pos = {
   type t = int;
@@ -31,7 +31,7 @@ type error = {
 };
 
 module ResultE =
-  Relude.Result.WithError({
+  Result.WithError({
     type t = error;
   });
 
@@ -64,16 +64,14 @@ let map: 'a 'b. ('a => 'b, t('a)) => t('b) =
     Parser(
       posString =>
         pa(posString)
-        |> Relude.Result.map(({result, suffix}) =>
-             {result: f(result), suffix}
-           ),
+        |> Result.map(({result, suffix}) => {result: f(result), suffix}),
     );
 
 module Functor: BsAbstract.Interface.FUNCTOR with type t('a) = t('a) = {
   type nonrec t('a) = t('a);
   let map = map;
 };
-include Relude_Extensions_Functor.FunctorExtensions(Functor);
+include Relude.Extensions.Functor.FunctorExtensions(Functor);
 
 /**
 Inspects a successful parse result using a callback with the value and the suffix
@@ -83,9 +81,7 @@ let tap: 'a. (('a, PosString.t, PosString.t) => unit, t('a)) => t('a) =
     Parser(
       posString =>
         pa(posString)
-        |> Relude.Result.tap(({result, suffix}) =>
-             f(result, posString, suffix)
-           ),
+        |> Result.tap(({result, suffix}) => f(result, posString, suffix)),
     );
 
 /**
@@ -119,9 +115,9 @@ let apply: 'a 'b. (t('a => 'b), t('a)) => t('b) =
     Parser(
       posString =>
         pf(posString)
-        |> Relude.Result.flatMap(({result: f, suffix: s1}) =>
+        |> Result.flatMap(({result: f, suffix: s1}) =>
              pa(s1)
-             |> Relude.Result.flatMap(({result: a, suffix: s2}) =>
+             |> Result.flatMap(({result: a, suffix: s2}) =>
                   Ok({result: f(a), suffix: s2})
                 )
            ),
@@ -132,7 +128,7 @@ module Apply: BsAbstract.Interface.APPLY with type t('a) = t('a) = {
   include Functor;
   let apply = apply;
 };
-include Relude_Extensions_Apply.ApplyExtensions(Apply);
+include Relude.Extensions.Apply.ApplyExtensions(Apply);
 
 /**
 Lift a pure value into a parser.
@@ -144,7 +140,7 @@ module Applicative: BsAbstract.Interface.APPLICATIVE with type t('a) = t('a) = {
   include Apply;
   let pure = pure;
 };
-include Relude_Extensions_Applicative.ApplicativeExtensions(Applicative);
+include Relude.Extensions.Applicative.ApplicativeExtensions(Applicative);
 
 /**
 Attempts to run a parser, and if it fails, attempts the other parser.
@@ -169,7 +165,7 @@ module Alt: BsAbstract.Interface.ALT with type t('a) = t('a) = {
   include Functor;
   let alt = alt;
 };
-include Relude_Extensions_Alt.AltExtensions(Alt);
+include Relude.Extensions.Alt.AltExtensions(Alt);
 
 /**
 Monadic bind for sequencing parsers
@@ -179,7 +175,7 @@ let bind: 'a 'b. (t('a), 'a => t('b)) => t('b) =
     Parser(
       posString =>
         pa(posString)
-        |> Relude.Result.flatMap(({result: a, suffix: s1}) => {
+        |> Result.flatMap(({result: a, suffix: s1}) => {
              let Parser(pb) = aToPB(a);
              pb(s1);
            }),
@@ -189,7 +185,7 @@ module Monad: BsAbstract.Interface.MONAD with type t('a) = t('a) = {
   include Applicative;
   let flat_map = bind;
 };
-include Relude_Extensions_Monad.MonadExtensions(Monad);
+include Relude.Extensions.Monad.MonadExtensions(Monad);
 
 /*
  module Semigroup: BsAbstract.Interface.SEMIGROUP_ANY with type t('a) = t('a) = {
@@ -215,7 +211,7 @@ let tries: 'a. t('a) => t('a) =
   (Parser(pa)) =>
     Parser(
       ({pos} as posString) =>
-        pa(posString) |> Relude.Result.mapError(({error}) => {pos, error}),
+        pa(posString) |> Result.mapError(({error}) => {pos, error}),
     );
 
 /**
@@ -234,10 +230,10 @@ let flipWithError: 'a. (t('a), string) => t('a) =
 Infix operator for flipWithError (e.g. many(anyChar) <?> "Expected many chars")
 */
 module Infix = {
-  include Relude_Extensions_Functor.FunctorInfix(Functor);
-  include Relude_Extensions_Apply.ApplyInfix(Apply);
-  include Relude_Extensions_Monad.MonadInfix(Monad);
-  include Relude_Extensions_Alt.AltInfix(Alt);
+  include Relude.Extensions.Functor.FunctorInfix(Functor);
+  include Relude.Extensions.Apply.ApplyInfix(Apply);
+  include Relude.Extensions.Monad.MonadInfix(Monad);
+  include Relude.Extensions.Alt.AltInfix(Alt);
   let (<?>) = flipWithError;
   let (<&>) = tuple2;
 };
@@ -273,14 +269,13 @@ TODO: not stack safe - purescript-string-parsers uses manyRec the MonadRec versi
 */
 let rec many: 'a. t('a) => t(list('a)) =
   pa => {
-    pa >>= (a => Relude.List.cons(a) <$> many(pa)) <|> pure([]);
+    pa >>= (a => List.cons(a) <$> many(pa)) <|> pure([]);
   };
 
 /**
 Attempts to run a parser 1 or more times to produce a non-empty-list of results.
 */
-let many1: 'a. t('a) => t(Relude.Nel.t('a)) =
-  pa => Relude.Nel.make <$> pa <*> many(pa);
+let many1: 'a. t('a) => t(Nel.t('a)) = pa => Nel.make <$> pa <*> many(pa);
 
 /**
 Attempts to run a parser the given number of times
@@ -292,7 +287,7 @@ let rec times: 'a. (int, t('a)) => t(list('a)) =
     if (count <= 0) {
       pure([]);
     } else {
-      Relude.List.cons <$> pa <*> times(count - 1, pa);
+      List.cons <$> pa <*> times(count - 1, pa);
     };
 
 /**
@@ -321,7 +316,7 @@ let times5: 'a. t('a) => t(('a, 'a, 'a, 'a, 'a)) =
 Attempts to run a parser at least `min` times (inclusive) and as many times as possible after that.
 */
 let timesMin: 'a. (int, t('a)) => t(list('a)) =
-  (min, pa) => Relude.List.concat <$> times(min, pa) <*> many(pa);
+  (min, pa) => List.concat <$> times(min, pa) <*> many(pa);
 
 /**
 Attempts to run a parser as many times as possible up to `max` times (inclusive).
@@ -333,7 +328,7 @@ let rec timesMax: 'a. (int, t('a)) => t(list('a)) =
     if (max == 0) {
       pure([]);
     } else {
-      Relude.List.concat
+      List.concat
       <$> (pa <#> (a => [a]) <|> pure([]))
       <*> timesMax(max - 1, pa);
     };
@@ -345,7 +340,7 @@ E.g. if you want to parse 2 to 5 digits, use: `timesMinMax(2, 5, anyDigit)`
 */
 let timesMinMax: 'a. (int, int, t('a)) => t(list('a)) =
   (min, max, pa) => {
-    Relude.List.concat <$> times(min, pa) <*> timesMax(max - min, pa);
+    List.concat <$> times(min, pa) <*> timesMax(max - min, pa);
   };
 
 /**
@@ -372,25 +367,25 @@ let orUnit: 'a. t('a) => t(unit) = p => p >>= (_ => pure()) <|> pure();
 Attempts a parser, and converts any errors into None, and wraps successful values in Some.
 */
 let opt: 'a. t('a) => t(option('a)) =
-  p => orDefault(None, Relude.Option.some <$> p);
+  p => orDefault(None, Option.some <$> p);
 
 /**
 Parses 0 or more separated values.
 */
 let rec sepBy: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
   (ps, pa) => {
-    Relude.Nel.toList <$> sepBy1(ps, pa) <|> pure([]);
+    Nel.toList <$> sepBy1(ps, pa) <|> pure([]);
   }
 
 /**
 Parses 1 or more separated values.
 */
-and sepBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
+and sepBy1: 'a 'sep. (t('sep), t('a)) => t(Nel.t('a)) =
   (ps, pa) => {
     pa
     >>= (
       h => {
-        many(ps *> pa) <#> (t => Relude.Nel.make(h, t));
+        many(ps *> pa) <#> (t => Nel.make(h, t));
       }
     );
   };
@@ -399,12 +394,12 @@ and sepBy1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
 Parses 0 or more separated values, optionally ending with a separator
 */
 let rec sepByOptEnd: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
-  (ps, pa) => Relude.Nel.toList <$> sepByOptEnd1(ps, pa) <|> pure([])
+  (ps, pa) => Nel.toList <$> sepByOptEnd1(ps, pa) <|> pure([])
 
 /**
 Parses 1 or more separated values, optionally ending with a separator
 */
-and sepByOptEnd1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
+and sepByOptEnd1: 'a 'sep. (t('sep), t('a)) => t(Nel.t('a)) =
   (ps, pa) => {
     pa
     >>= (
@@ -412,10 +407,10 @@ and sepByOptEnd1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
         ps
         >>= (
           _ => {
-            sepByOptEnd(ps, pa) <#> (t => Relude.Nel.make(h, t));
+            sepByOptEnd(ps, pa) <#> (t => Nel.make(h, t));
           }
         )
-        <|> pure(Relude.Nel.pure(h));
+        <|> pure(Nel.pure(h));
       }
     );
   };
@@ -429,7 +424,7 @@ let sepByWithEnd: 'a 'sep. (t('sep), t('a)) => t(list('a)) =
 /**
 Parses 1 or more separated values, ending with a separator
  */
-let sepByWithEnd1: 'a 'sep. (t('sep), t('a)) => t(Relude.Nel.t('a)) =
+let sepByWithEnd1: 'a 'sep. (t('sep), t('a)) => t(Nel.t('a)) =
   (ps, pa) => many1(pa <* ps);
 
 /**
@@ -474,30 +469,27 @@ and chainl1': 'a. (t(('a, 'a) => 'a), 'a, t('a)) => t('a) =
 Parses a value using any of the given parsers (first successful wins from left-to-right)
 */
 let anyOf: 'a. list(t('a)) => t('a) =
-  ps => Relude.List.foldLeft((<|>), fail("Nothing to parse"), ps);
+  ps => List.foldLeft((<|>), fail("Nothing to parse"), ps);
 
 /**
 Parses 0 or more values up until an end value
  */
 let rec manyUntil: 'a 'terminator. (t('terminator), t('a)) => t(list('a)) =
-  (pt, pa) => pt *> pure([]) <|> (Relude.Nel.toList <$> many1Until(pt, pa))
+  (pt, pa) => pt *> pure([]) <|> (Nel.toList <$> many1Until(pt, pa))
 
 /**
 Parses 1 or more values up until an end value
 
 TODO: not stack safe
  */
-and many1Until:
-  'a 'terminator.
-  (t('terminator), t('a)) => t(Relude.Nel.t('a))
- =
+and many1Until: 'a 'terminator. (t('terminator), t('a)) => t(Nel.t('a)) =
   (pt, pa) =>
     pa
     >>= (
       a => {
         pt
-        <#> (_ => Relude.Nel.pure(a))
-        <|> (many1Until(pt, pa) <#> (nel => Relude.Nel.cons(a, nel)));
+        <#> (_ => Nel.pure(a))
+        <|> (many1Until(pt, pa) <#> (nel => Nel.cons(a, nel)));
       }
     );
 
@@ -528,7 +520,7 @@ Matches the end of the input, or fails if there is text left to parse.
 let eof: t(unit) =
   Parser(
     ({pos, str} as posString) =>
-      if (pos < Relude.String.length(str)) {
+      if (pos < String.length(str)) {
         Error({pos, error: ParseError("Expected EOF")});
       } else {
         Ok({result: (), suffix: posString});
@@ -541,7 +533,7 @@ Matches any character
 let anyChar: t(string) =
   Parser(
     ({pos, str}) =>
-      switch (Relude.String.charAt(pos, str)) {
+      switch (String.charAt(pos, str)) {
       | Some(c) => Ok({
                      result: c,
                      suffix: {
@@ -566,8 +558,8 @@ let anyDigitAsInt: t(int) =
     >>= (
       c =>
         c
-        |> Relude.String.toInt
-        |> Relude.Option.foldLazy(
+        |> String.toInt
+        |> Option.foldLazy(
              _ => fail("Expected a digit, but found character '" ++ c ++ "'"),
              pure,
            )
@@ -582,19 +574,19 @@ let anyDigit: t(string) = string_of_int <$> anyDigitAsInt;
 /**
 Matches any string (warning: this will likely consume as much input as possible)
  */
-let anyStr: t(string) = many(anyChar) <#> Relude.List.String.join;
+let anyStr: t(string) = many(anyChar) <#> List.String.join;
 
 /**
 Matches any non-empty string
  */
 let anyNonEmptyStr: t(string) =
-  many1(anyChar) <#> (Relude.Nel.toList >> Relude.List.String.join);
+  many1(anyChar) <#> (Nel.toList >> List.String.join);
 
 /**
 Matches any non-empty string of digits
  */
 let anyNonEmptyDigits: t(string) =
-  many1(anyDigit) <#> (Relude.Nel.toList >> Relude.List.String.join);
+  many1(anyDigit) <#> (Nel.toList >> List.String.join);
 
 /**
 Matches the given string (case-sensitive)
@@ -603,8 +595,8 @@ let str: string => t(string) =
   toMatch =>
     Parser(
       ({pos, str}) => {
-        let matchLength = Relude.String.length(toMatch);
-        let slice = Relude.String.slice(pos, pos + matchLength, str);
+        let matchLength = String.length(toMatch);
+        let slice = String.slice(pos, pos + matchLength, str);
         if (slice == toMatch) {
           Ok({
             result: slice,
@@ -626,10 +618,9 @@ let strIgnoreCase: string => t(string) =
   toMatch =>
     Parser(
       ({pos, str}) => {
-        let matchLength = Relude.String.length(toMatch);
-        let slice = Relude.String.slice(pos, pos + matchLength, str);
-        if (Relude.String.toLowerCase(slice)
-            == Relude.String.toLowerCase(toMatch)) {
+        let matchLength = String.length(toMatch);
+        let slice = String.slice(pos, pos + matchLength, str);
+        if (String.toLowerCase(slice) == String.toLowerCase(toMatch)) {
           Ok({
             result: slice,
             suffix: {
@@ -665,13 +656,13 @@ let anyCharBy: (string => bool) => t(string) =
 Matches any of the given strings (case-sensitive)
  */
 let anyOfStr: list(string) => t(string) =
-  whitelist => anyOf(Relude.List.map(str, whitelist));
+  whitelist => anyOf(List.map(str, whitelist));
 
 /**
 Matches any of the given strings (case-insensitive)
  */
 let anyOfStrIgnoreCase: list(string) => t(string) =
-  whitelist => anyOf(Relude.List.map(strIgnoreCase, whitelist));
+  whitelist => anyOf(List.map(strIgnoreCase, whitelist));
 
 /**
 Matches any amoutn of whitespace and returns each ws char in a list
@@ -681,7 +672,7 @@ let wsList: t(list(string)) = many(anyOfStr([" ", "\t", "\r", "\n"]));
 /**
 Matches any amount of whitespace, and returns it as a single string
  */
-let wsStr: t(string) = Relude.List.String.join <$> wsList;
+let wsStr: t(string) = List.String.join <$> wsList;
 
 /**
 Matches any amount of whitespace, and ignores it (returns unit)
@@ -692,20 +683,16 @@ let ws: t(unit) = void(wsList);
 Matches any char except for any of the given chars (case-sensitive)
  */
 let anyCharNotIn: list(string) => t(string) =
-  blacklist => anyCharBy(c => !(blacklist |> Relude.List.String.contains(c)));
+  blacklist => anyCharBy(c => !(blacklist |> List.String.contains(c)));
 
 /**
 Matches any char except for any of the given chars (case-insensitive)
  */
 let anyCharNotInIgnoreCase: list(string) => t(string) =
   blacklist => {
-    let blacklistLower =
-      blacklist |> Relude.List.map(Relude.String.toLowerCase);
+    let blacklistLower = blacklist |> List.map(String.toLowerCase);
     anyCharBy(c =>
-      !(
-        blacklistLower
-        |> Relude.List.String.contains(Relude.String.toLowerCase(c))
-      )
+      !(blacklistLower |> List.String.contains(String.toLowerCase(c)))
     );
   };
 
@@ -761,7 +748,7 @@ let anyUnsignedInt: t(int) =
     >>= (
       nonZeroDigit =>
         many(anyDigit)
-        <#> Relude.List.String.join
+        <#> List.String.join
         <#> (otherDigits => int_of_string(nonZeroDigit ++ otherDigits)) // int_of_string is unsafe, but we are relatively sure we have a valid int string here, so we'll allow it
     )
   );
@@ -856,13 +843,13 @@ let regex: Js.Re.t => t(string) =
         let flags = Js.Re.flags(regex);
         let source = Js.Re.source(regex);
         let caretSource =
-          if (Relude.String.startsWith("^", source)) {
+          if (String.startsWith(~search="^", source)) {
             source;
           } else {
             "^" ++ source;
           };
         let regexFinal = Js.Re.fromStringWithFlags(caretSource, ~flags);
-        let input = Relude.String.sliceToEnd(pos, str);
+        let input = String.sliceToEnd(pos, str);
         let resultOpt = Js.Re.exec_(regexFinal, input);
         let parseError = () =>
           ParseError.ParseError(
@@ -875,16 +862,16 @@ let regex: Js.Re.t => t(string) =
         | None => Error({error: parseError(), pos})
         | Some(result) =>
           let captures: array(Js.nullable(string)) = Js.Re.captures(result);
-          Relude.Array.head(captures)
-          |> Relude.Option.flatMap(Js.Nullable.toOption)
-          |> Relude.Option.foldLazy(
+          Array.head(captures)
+          |> Option.flatMap(Js.Nullable.toOption)
+          |> Option.foldLazy(
                () => Belt.Result.Error({error: parseError(), pos}),
                match =>
                  Belt.Result.Ok({
                    result: match,
                    suffix: {
                      str,
-                     pos: pos + Relude.String.length(match),
+                     pos: pos + String.length(match),
                    },
                  }),
              );
@@ -934,7 +921,7 @@ Matches a decimal that starts with an - sign
  */
 let anyNegativeDecimal: t(string) =
   (str("-"), anyUnsignedDecimal)
-  |> mapTuple2(Relude.String.concat)
+  |> mapTuple2(String.concat)
   <?> "Expected a negative decimal";
 
 /**
