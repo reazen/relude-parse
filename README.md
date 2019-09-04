@@ -482,8 +482,10 @@ list of parser functions that come with `ReludeParse`.
 |`<?>`|provide a custom error message
 |`many`|Run any parser 0 or more times to produce a `[]` of values (like `*` in regex)
 |`many1`|Run any parser 1 or more times to produce a `Relude.NonEmptyList` (aka `Nel`) of values (like `+` in regex) - the result is a `Nel` because we are guaranteed to find at least one value, otherwise the parser will fail
-|`manyUntil`|parse 0 or more values until a terminator is reached
-|`many1Until`|parse 1 or more values until a terminator is reached
+|`manyUntil`|parse 0 or more values until a terminator is reached, producing the results and discarding the consumed the terminator
+|`many1Until`|parse 1 or more values until a terminator is reached, producing the results and discarding the consumed the terminator
+|`manyUntilWithEnd`|parse 0 or more values until a terminator is reached, producing the results and the consumed terminator
+|`many1UntilWithEnd`|parse 1 or more values until a terminator is reached, producing the results and the consumed terminator
 |`times`|run a parser `count` times and produce a `[]` of results
 |`times2`-`5`|run a parser exactly twice (up to 5) to produce a tuple of results
 |`timesMin`|run a parser at least n times to produce a list of results
