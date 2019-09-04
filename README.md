@@ -468,10 +468,17 @@ See the code and tests for more examples.
 For more details, examples, tests, etc., please refer to the code.  Below is a possibly incomplete
 list of parser functions that come with `ReludeParse`.
 
+## Basic constructors
+
 |Function|Description|Example|
 |--------|-----------|-------|
 |`pure`|lift a pure value into a parser that always succeeds with the value
 |`fail`|lift an error message into a parser that always fails with the error message
+
+## Core functional programming operations
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`map`/`<$>`/`<#>`/`<$`/`$>`|functor functions for mapping pure functions over a parser
 |`apply`/`<*>`/`<*`/`*>`|applicative functions for combining parsers
 |`<&>`|combine two parsers using a tuple
@@ -479,7 +486,17 @@ list of parser functions that come with `ReludeParse`.
 |`map2`-`5`|combine parsers using a function to combine the results
 |`mapTuple2`-`5`|combine a tuple of parsers using a function to combine the results
 |`flatMap`/`bind`/`>>=`|map a function over a parser that can produce a new parser - used for sequencing parsers
+
+## Error customization/handling
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`<?>`|provide a custom error message
+
+## Repeated values
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`many`|Run any parser 0 or more times to produce a `[]` of values (like `*` in regex)
 |`many1`|Run any parser 1 or more times to produce a `Relude.NonEmptyList` (aka `Nel`) of values (like `+` in regex) - the result is a `Nel` because we are guaranteed to find at least one value, otherwise the parser will fail
 |`manyUntil`|parse 0 or more values until a terminator is reached, producing the results and discarding the consumed the terminator
@@ -491,24 +508,54 @@ list of parser functions that come with `ReludeParse`.
 |`timesMin`|run a parser at least n times to produce a list of results
 |`timesMax`|run a parser at most n times to produce a list of results
 |`timesMinMax`|run a parser at least n times and at most m times to produce a list of results
-|`between`|parse a value inside opening and closing delimiters|`(abc)`
+
+## Optional/default values
+
+|Function|Description|Example|
+|--------|-----------|-------|
+|`opt`|attempt a parser, and wrap a success in `Some` and convert a failure to `None`
 |`orDefault`|attempt a parser, and if it fails, produce a default value
 |`orUnit`|attempt a parser, and if it fails, produce unit
-|`opt`|attempt a parser, and wrap a success in `Some` and convert a failure to `None`
+
+## Delimited values
+
+|Function|Description|Example|
+|--------|-----------|-------|
+|`between`|parse a value inside opening and closing delimiters|`(abc)`
 |`sepBy`|parse zero or more values separated by a delimiter|`a,b,c,d`
 |`sepBy1`|parse one or more values separated by a delimiter|`a,b,c,d`
 |`sepByOptEnd`|parse zero or more values separated by a delimiter, optionally ending with the delimiter|`a,b,c,d` or `a,b,c,d,`
 |`sepByOptEnd1`|parse one or more values separated by a delimiter, optionally ending with the delimiter|`a,b,c,d` or `a,b,c,d,`
 |`sepByWithEnd`|parse zero or more delimited values ending with the delimiter|`a,b,c,`
 |`sepByWithEnd1`|parse one or more delimited values ending with the delimiter|`a,b,c,`
+
+## Associative operators
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`chainr1`|parse values separated by a right-associative operator (useful for parsing math expressions)
 |`chainl1`|parse values separated by a left-associative operator (useful for parsing math expressions)
-|`anyOf`|parse a value matching any of the given strings
+
+## Trying different parsers
+
+|Function|Description|Example|
+|--------|-----------|-------|
+|`anyOf`|parse a value matching any of the given parsers||
+
+## Validation/extraction
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`filter`|apply a predicate to the result of a parser to either continue or fail the parse
+
+## Text parsers
+
+|Function|Description|Example|
+|--------|-----------|-------|
 |`eof`|verify that the end of the input has been reached
+|`ofEOF`|attempts a parser, and throws away the result, or if it fails, attempts the `eof` parser
 |`anyChar`|parses any single character
-|`anyDigitAsInt`|parses any single character, makes sure it's a digit 0-9 and converts it to an int
-|`anyDigit`|parses any single character, makes sure it's a digit 0-9 and produces it as a single character string
+|`notChar`|parses any single character except the given
 |`anyStr`|parses any string (WARNING: this will likely consume all remaining input)
 |`anyNonEmptyStr`|parses any non-empty (`""`) string
 |`str`|parses the given string
@@ -522,6 +569,19 @@ list of parser functions that come with `ReludeParse`.
 |`anyCharNotIn`|parses any single char not in the given list
 |`anyCharNotInIgnoreCase`|parses any single char not in the given list, case-insensitive
 |`anyCharInRange`|parses any character in the ASCII code range
+|`anyLowerCaseChar`|parses a single lowercase letter char
+|`anyUpperCaseChar`|parses a single uppercase letter char
+|`anyAlpha`|parses any upper or lowercase letter char
+|`anyAlphaOrDigit`|parses any upper or lowercase letter or digit char
+|`regex`|parses a string matching the given regex
+|`regexStr`|parses a string matching the given regex string
+
+## Numeric parsers
+
+|Function|Description|Example|
+|--------|-----------|-------|
+|`anyDigitAsInt`|parses any single character, makes sure it's a digit 0-9 and converts it to an int
+|`anyDigit`|parses any single character, makes sure it's a digit 0-9 and produces it as a single character string
 |`anyNonDigit`|parses any non-digit character
 |`anyNonZeroDigit`|parses any non-zero digit character
 |`anyNonZeroDigitAsInt`|parses any non-zero digit character as an int
@@ -529,15 +589,9 @@ list of parser functions that come with `ReludeParse`.
 |`anyNegativeInt`|parses a negative integer (- prefix)
 |`anyInt`|parses any positive or negative int
 |`anyUnsignedShort`|parses a short int
-|`anyLowerCaseChar`|parses a single lowercase letter char
-|`anyUpperCaseChar`|parses a single uppercase letter char
-|`anyAlpha`|parses any upper or lowercase letter char
-|`anyAlphaOrDigit`|parses any upper or lowercase letter or digit char
+|`anyDecimal`|parses a decimal value with optional exponential notation
 |`anyHexDigit`|parses any hex digit 0-9 or a-f or A-F
 |`anyNonZeroHexDigit`|parses any hex digit 1-9 or a-f or A-F
-|`regex`|parses a string matching the given regex
-|`regexStr`|parses a string matching the given regex string
-|`anyDecimal`|parses a decimal value with optional exponential notation
 |`anyBool`|parses a bool true or false value
 
 See the code and tests for a complete list of functions and examples.
