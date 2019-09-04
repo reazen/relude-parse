@@ -571,8 +571,8 @@ list of parser functions that come with `ReludeParse`.
 |`filter`|apply a predicate to the result of a parser to either continue or fail the parse
 |`getSome`|converts a parser of `option('a)` into a parser of `'a`, failing if the value is `None`
 |`getNonEmptyStr`|converts a parser of `string` into a parser of a non-empty `string`, failing if the value is `""`
-|`getFst`|converts a parser of `('a, 'b)` into a parser of `'a`, failing if the value is `'b`
-|`getSnd`|converts a parser of `('a, 'b)` into a parser of `'b`, failing if the value is `'a`
+|`getFst`|converts a parser of `('a, 'b)` into a parser of `'a`
+|`getSnd`|converts a parser of `('a, 'b)` into a parser of `'b`
 
 ## Text parsers
 
