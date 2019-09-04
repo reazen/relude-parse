@@ -1,46 +1,7 @@
 open Jest;
 open Expect;
-
-module P = ReludeParse.Parser;
+open TestUtils;
 open P.Infix;
-
-let testParse: 'a. (P.t('a), string, 'a, P.PosString.t) => assertion =
-  (parser, input, expectedResult, expectedSuffix) => {
-    switch (P.unParser({pos: 0, str: input}, parser)) {
-    | Ok({result, suffix}) =>
-      expect((result, suffix)) |> toEqual((expectedResult, expectedSuffix))
-    | Error({pos, error: ParseError(message)}) =>
-      fail(
-        "Parser should have succeeded for input: "
-        ++ input
-        ++ ": "
-        ++ message
-        ++ " at pos: "
-        ++ string_of_int(pos),
-      )
-    };
-  };
-
-let testParseFail: 'a. (P.t('a), string, P.Pos.t) => assertion =
-  (parser, input, expectedPos) => {
-    switch (P.unParser({pos: 0, str: input}, parser)) {
-    | Ok(_) => fail("Parser should have failed for input: " ++ input)
-    | Error({pos, error: ParseError(_message)}) =>
-      expect(pos) |> toEqual(expectedPos)
-    };
-  };
-
-let testParseFailWithMessage:
-  'a.
-  (P.t('a), string, P.Pos.t, string) => assertion
- =
-  (parser, input, expectedPos, expectedMessage) => {
-    switch (P.unParser({pos: 0, str: input}, parser)) {
-    | Ok(_) => fail("Parser should have failed for input: " ++ input)
-    | Error({pos, error: ParseError(message)}) =>
-      expect((pos, message)) |> toEqual((expectedPos, expectedMessage))
-    };
-  };
 
 describe("ReludeParse_Parser", () => {
   test("runParser success", () =>
@@ -67,6 +28,10 @@ describe("ReludeParse_Parser", () => {
       });
     expect(actual) |> toEqual(expected);
   });
+
+  test("unit", () =>
+    testParse(P.unit, "whatever", (), {pos: 0, str: "whatever"})
+  );
 
   test("fail", () => {
     let actual = P.fail("Fail!") |> P.unParser({pos: 0, str: "whatever"});
@@ -231,6 +196,24 @@ describe("ReludeParse_Parser", () => {
     testParse(p, "3abcdef", ["a", "b", "c"], {pos: 4, str: "3abcdef"});
   });
 
+  test("throwError", () => {
+    let actual =
+      P.throwError(P.ParseError.make("hi"))
+      |> P.unParser({pos: 0, str: "whatever"});
+    let expected: Belt.Result.t(P.success(_), P.error) =
+      Belt.Result.Error({error: ParseError("hi"), pos: 0});
+    expect(actual) |> toEqual(expected);
+  });
+
+  test("catchError", () =>
+    testParse(
+      P.anyDigit <?> "a" |> P.catchError((ParseError(msg)) => P.str(msg)),
+      "a",
+      "a",
+      {pos: 1, str: "a"},
+    )
+  );
+
   test("alt/<|> first success", () =>
     testParse(P.anyDigit <|> P.anyAlpha, "2", "2", {str: "2", pos: 1})
   );
@@ -247,6 +230,76 @@ describe("ReludeParse_Parser", () => {
     testParseFail(
       P.str("abc") <|> P.str("def") <|> P.str("ghi"),
       "!!!!",
+      0,
+    )
+  );
+
+  test("altLazy first success", () =>
+    testParse(
+      P.altLazy(P.anyDigit, () => P.anyAlpha),
+      "2",
+      "2",
+      {str: "2", pos: 1},
+    )
+  );
+
+  test("altLazy second success", () =>
+    testParse(
+      P.altLazy(P.anyDigit, () => P.anyAlpha),
+      "a",
+      "a",
+      {str: "a", pos: 1},
+    )
+  );
+
+  test("altLazy failure", () =>
+    testParseFail(P.altLazy(P.anyDigit, () => P.anyAlpha), "!", 0)
+  );
+
+  test("orElse first success", () =>
+    testParse(
+      P.anyDigit |> P.orElse(~fallback=P.anyDigit),
+      "2",
+      "2",
+      {str: "2", pos: 1},
+    )
+  );
+
+  test("orElse second success", () =>
+    testParse(
+      P.anyDigit |> P.orElse(~fallback=P.anyAlpha),
+      "a",
+      "a",
+      {str: "a", pos: 1},
+    )
+  );
+
+  test("orElse failure", () =>
+    testParseFail(P.anyDigit |> P.orElse(~fallback=P.anyDigit), "!", 0)
+  );
+
+  test("orElseLazy first success", () =>
+    testParse(
+      P.anyDigit |> P.orElseLazy(~fallback=() => P.anyDigit),
+      "2",
+      "2",
+      {str: "2", pos: 1},
+    )
+  );
+
+  test("orElseLazy second success", () =>
+    testParse(
+      P.anyDigit |> P.orElseLazy(~fallback=() => P.anyAlpha),
+      "a",
+      "a",
+      {str: "a", pos: 1},
+    )
+  );
+
+  test("orElseLazy failure", () =>
+    testParseFail(
+      P.anyDigit |> P.orElseLazy(~fallback=() => P.anyDigit),
+      "!",
       0,
     )
   );
@@ -277,6 +330,19 @@ describe("ReludeParse_Parser", () => {
 
   test("lookAhead failure", () =>
     testParseFail(P.lookAhead(P.anyDigit), "a", 0)
+  );
+
+  test("lookAheadNot success", () =>
+    testParse(
+      P.anyAlpha <&> P.lookAheadNot(P.str("bbb")),
+      "a999",
+      ("a", ()),
+      {pos: 1, str: "a999"},
+    )
+  );
+
+  test("lookAheadNot failure", () =>
+    testParseFail(P.anyAlpha <&> P.lookAheadNot(P.str("bbb")), "abbb", 1)
   );
 
   test("many success", () =>
@@ -863,6 +929,45 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit |> P.many1Until(P.str("!")), "123", 3)
   );
 
+  test("manyUntilPeekWithEnd full success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilPeekWithEnd(P.str("!")),
+      "123!",
+      (["1", "2", "3"], "!"),
+      {pos: 3, str: "123!"},
+    )
+  );
+
+  test("manyUntilPeekWithEnd empty success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilPeekWithEnd(P.str("!")),
+      "!",
+      ([], "!"),
+      {pos: 0, str: "!"},
+    )
+  );
+
+  test("manyUntilPeekWithEnd failure", () =>
+    testParseFail(P.anyDigit |> P.manyUntilPeekWithEnd(P.str("!")), "123", 3)
+  );
+
+  test("many1UntilPeekWithEnd full success", () =>
+    testParse(
+      P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")),
+      "123!",
+      (Relude.Nel.make("1", ["2", "3"]), "!"),
+      {pos: 3, str: "123!"},
+    )
+  );
+
+  test("many1UntilPeekWithEnd empty failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")), "!", 0)
+  );
+
+  test("many1UntilPeek failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")), "123", 3)
+  );
+
   test("filter success", () =>
     testParse(
       P.anyInt |> P.filter(i => i <= 255) <?> "Expected an int less than 255",
@@ -879,6 +984,32 @@ describe("ReludeParse_Parser", () => {
       0,
       "Expected an int less than 255",
     )
+  );
+
+  test("getSome success", () =>
+    testParse(
+      P.opt(P.anyDigit) |> P.getSome,
+      "9ab",
+      "9",
+      {pos: 1, str: "9ab"},
+    )
+  );
+
+  test("getSome failure", () =>
+    testParseFail(P.opt(P.anyDigit) |> P.getSome, "abc", 0)
+  );
+
+  test("getNonEmptyStr success", () =>
+    testParse(
+      P.anyDigit |> P.getNonEmptyStr,
+      "9ab",
+      "9",
+      {pos: 1, str: "9ab"},
+    )
+  );
+
+  test("getNonEmptyStr failure", () =>
+    testParseFail(P.anyDigit <#> (_ => "") |> P.getNonEmptyStr, "9ab", 1)
   );
 
   test("eof empty string", () =>
@@ -902,6 +1033,18 @@ describe("ReludeParse_Parser", () => {
 
   testAll("anyChar fail", badChars, input =>
     testParseFail(P.anyChar, input, 0)
+  );
+
+  test("notChar success", () =>
+    testParse(P.notChar("b"), "abc", "a", {pos: 1, str: "abc"})
+  );
+
+  test("notChar failure match", () =>
+    testParseFail(P.notChar("a"), "abc", 0)
+  );
+
+  test("notChar failure empty", () =>
+    testParseFail(P.notChar("a"), "", 0)
   );
 
   let goodDigits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];

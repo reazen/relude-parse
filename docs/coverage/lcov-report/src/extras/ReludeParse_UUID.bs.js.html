@@ -219,7 +219,7 @@ function <span class="fstat-no" title="function not covered" >parseOption(</span
 &nbsp;
 function unsafeFromString(str) {
   return Relude_Result.fold((<span class="fstat-no" title="function not covered" >fu</span>nction (e) {
-<span class="cstat-no" title="statement not covered" >                return Pervasives.failwith(ReludeParse_Parser.ParseError[/* show */0](e));</span>
+<span class="cstat-no" title="statement not covered" >                return Pervasives.failwith(ReludeParse_Parser.ParseError[/* show */1](e));</span>
               }), Relude_Globals.id, ReludeParse_Parser.runParser(str, parser));
 }
 &nbsp;

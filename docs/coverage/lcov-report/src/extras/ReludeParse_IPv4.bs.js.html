@@ -268,7 +268,7 @@ function parseOption(param) {
 &nbsp;
 function unsafeFromString(str) {
   return Relude_Result.fold((function (e) {
-                return Pervasives.failwith(ReludeParse_Parser.ParseError[/* show */0](e));
+                return Pervasives.failwith(ReludeParse_Parser.ParseError[/* show */1](e));
               }), Relude_Globals.id, ReludeParse_Parser.runParser(str, parser));
 }
 &nbsp;

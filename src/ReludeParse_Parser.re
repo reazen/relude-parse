@@ -1,9 +1,15 @@
 open Relude.Globals;
 
+/**
+ * Represents the parse position (i.e. the current index in the string)
+ */
 module Pos = {
   type t = int;
 };
 
+/**
+ * Tracks the current parse position in a specific string
+ */
 module PosString = {
   type t = {
     pos: Pos.t,
@@ -13,28 +19,46 @@ module PosString = {
   let make = (pos, str) => {pos, str};
 };
 
+/**
+ * Represents parse errors
+ */
 module ParseError = {
   type t =
     | ParseError(string);
 
+  let make: string => t = str => ParseError(str);
+
   let show: t => string = (ParseError(message)) => message;
 };
 
+/**
+ * The successful result of a parser - a value of some type, and the remaining part of the string to parse
+ */
 type success('a) = {
   result: 'a,
   suffix: PosString.t,
 };
 
+/**
+ * The failed result of a parser - the position of the parse failure, and an error
+ */
 type error = {
   pos: Pos.t,
   error: ParseError.t,
 };
 
+/**
+ * Locks in the error type of the Result for convenience
+ */
 module ResultE =
   Result.WithError({
     type t = error;
   });
 
+/**
+ * A parser is a function from a position and string, which products either a successful parse
+ * with some value and the rest of the string, or a parse error and position.
+ */
 type t('a) =
   | Parser(PosString.t => Belt.Result.t(success('a), error));
 
@@ -67,6 +91,9 @@ let map: 'a 'b. ('a => 'b, t('a)) => t('b) =
         |> Result.map(({result, suffix}) => {result: f(result), suffix}),
     );
 
+/**
+ * FUNCTOR instance for Parser
+ */
 module Functor: BsAbstract.Interface.FUNCTOR with type t('a) = t('a) = {
   type nonrec t('a) = t('a);
   let map = map;
@@ -124,6 +151,9 @@ let apply: 'a 'b. (t('a => 'b), t('a)) => t('b) =
     );
   };
 
+/**
+ * APPLY instance for Parser
+ */
 module Apply: BsAbstract.Interface.APPLY with type t('a) = t('a) = {
   include Functor;
   let apply = apply;
@@ -136,6 +166,14 @@ Lift a pure value into a parser.
 let pure: 'a. 'a => t('a) =
   a => Parser(posString => Belt.Result.Ok({result: a, suffix: posString}));
 
+/**
+ * A parser that produces a pure unit () value regardless of the input
+ */
+let unit: t(unit) = pure();
+
+/**
+ * APPLICATIVE instance for Parser
+ */
 module Applicative: BsAbstract.Interface.APPLICATIVE with type t('a) = t('a) = {
   include Apply;
   let pure = pure;
@@ -143,7 +181,7 @@ module Applicative: BsAbstract.Interface.APPLICATIVE with type t('a) = t('a) = {
 include Relude.Extensions.Applicative.ApplicativeExtensions(Applicative);
 
 /**
-Attempts to run a parser, and if it fails, attempts the other parser.
+Attempts to run a parser on the left, and if it fails, attempts the other parser on the right.
 */
 let alt: 'a. (t('a), t('a)) => t('a) =
   (Parser(p1), Parser(p2)) => {
@@ -161,6 +199,44 @@ let alt: 'a. (t('a), t('a)) => t('a) =
     );
   };
 
+/**
+ * Attempts to run a parser on the left, and if it fails, attempts the other lazily-constructed parser on the right.
+ */
+let altLazy: 'a. (t('a), unit => t('a)) => t('a) =
+  (Parser(p1), makeP2) => {
+    Parser(
+      posString =>
+        switch (p1(posString)) {
+        | Ok(_) as ok => ok
+        | Error({pos}) as e =>
+          if (posString.pos == pos) {
+            let Parser(p2) = makeP2();
+            p2(posString);
+          } else {
+            e;
+          }
+        },
+    );
+  };
+
+/**
+ * Handles an error by using a new parser
+ *
+ * Similar to `alt` or `<|>` with the arguments reversed (and the fallback arg named)
+ */
+let orElse = (~fallback: t('a), pa: t('a)): t('a) => alt(pa, fallback);
+
+/**
+ * Handles an error by using a new lazily-constructed parser
+ *
+ * Similar to `alt` or `<|>` with the arguments reversed (and the fallback arg named and lazy)
+ */
+let orElseLazy = (~fallback: unit => t('a), pa: t('a)): t('a) =>
+  altLazy(pa, fallback);
+
+/**
+ * ALT instance for Parser
+ */
 module Alt: BsAbstract.Interface.ALT with type t('a) = t('a) = {
   include Functor;
   let alt = alt;
@@ -181,6 +257,9 @@ let bind: 'a 'b. (t('a), 'a => t('b)) => t('b) =
            }),
     );
 
+/**
+ * MONAD instance for Parser
+ */
 module Monad: BsAbstract.Interface.MONAD with type t('a) = t('a) = {
   include Applicative;
   let flat_map = bind;
@@ -201,6 +280,49 @@ Lifts an error message into a parser that will fail with the given message.
 */
 let fail: 'a. string => t('a) =
   message => Parser(({pos}) => Error({pos, error: ParseError(message)}));
+
+/**
+ * Lifts a ParseError.t value into a parser that will fail with the given error value.
+ */
+let throwError: ParseError.t => t('a) =
+  (ParseError(message)) => fail(message);
+
+/**
+ * MONAD_THROW instance for Parser
+ */
+module MonadThrow:
+  Relude.Interface.MONAD_THROW with
+    type t('a) = t('a) and type e = ParseError.t = {
+  include Monad;
+  type e = ParseError.t;
+  let throwError = throwError;
+};
+include Relude.Extensions.MonadThrow.MonadThrowExtensions(MonadThrow);
+
+/**
+ * Handles an error by creating a new parser from the error
+ */
+let catchError: 'a. (ParseError.t => t('a), t('a)) => t('a) =
+  (errorToPA, Parser(pa)) =>
+    Parser(
+      posString =>
+        pa(posString)
+        |> Relude.Result.catchError(({error}) => {
+             let Parser(pa2) = errorToPA(error);
+             pa2(posString);
+           }),
+    );
+
+/**
+ * MONAD_ERROR instance for Parser
+ */
+module MonadError:
+  Relude.Interface.MONAD_ERROR with
+    type t('a) = t('a) and type e = ParseError.t = {
+  include MonadThrow;
+  let catchError = catchError;
+};
+include Relude.Extensions.MonadError.MonadErrorExtensions(MonadError);
 
 /**
 In case of error, the default behavior is to backtrack if no input was consumed.
@@ -232,15 +354,14 @@ Infix operator for flipWithError (e.g. many(anyChar) <?> "Expected many chars")
 module Infix = {
   include Relude.Extensions.Functor.FunctorInfix(Functor);
   include Relude.Extensions.Apply.ApplyInfix(Apply);
+  let (<&>) = tuple2;
   include Relude.Extensions.Monad.MonadInfix(Monad);
   include Relude.Extensions.Alt.AltInfix(Alt);
   let (<?>) = flipWithError;
-  let (<&>) = tuple2;
 };
 
-// Bring all the useful operators into scope
-let ((<$>), (<#>), (<*>), ( <* ), ( *> ), (>>=), (<|>), (<?>)) =
-  Infix.((<$>), (<#>), (<*>), ( <* ), ( *> ), (>>=), (<|>), (<?>));
+// Bring all the useful operators into scope for use below and in global/local opens of ReludeParse.Parser
+include Infix;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Combinators
@@ -261,6 +382,40 @@ let lookAhead: 'a. t('a) => t('a) =
         },
     );
   };
+
+/**
+Runs a parser to look ahead at a value, but keeps the parse position in its original location.
+
+Alias for `lookAhead`
+*/
+let peek: 'a. t('a) => t('a) = lookAhead;
+
+/**
+ * Runs a parser to see if it succeeds, and if it does, fail the parse.  If the parser fails,
+ * unit is returned, and the position is left unchanged.
+ */
+let lookAheadNot: 'a. t('a) => t(unit) =
+  (Parser(p)) => {
+    Parser(
+      posString =>
+        switch (p(posString)) {
+        | Ok(_) =>
+          Belt.Result.Error({
+            pos: posString.pos,
+            error: ParseError.make("Expected look ahead to fail"),
+          })
+        | Error(_) => Belt.Result.Ok({suffix: posString, result: ()})
+        },
+    );
+  };
+
+/**
+ * Runs a parser to see if it succeeds, and if it does, fail the parse.  If the parser fails,
+ * unit is returned, and the position is left unchanged.
+ *
+ * Alias for lookAheadNot
+ */
+let peekNot: 'a. t('a) => t(unit) = lookAheadNot;
 
 /**
 Attempts to run a parser 0 or more times to produce a list of results.
@@ -472,26 +627,137 @@ let anyOf: 'a. list(t('a)) => t('a) =
   ps => List.foldLeft((<|>), fail("Nothing to parse"), ps);
 
 /**
-Parses 0 or more values up until an end value
+ * Converts a parser of an `option('a)` into a parser of `'a`, failing if the value is `None`
  */
-let rec manyUntil: 'a 'terminator. (t('terminator), t('a)) => t(list('a)) =
-  (pt, pa) => pt *> pure([]) <|> (Nel.toList <$> many1Until(pt, pa))
+let getSome: 'a. t(option('a)) => t('a) =
+  popt =>
+    popt
+    >>= (
+      fun
+      | Some(a) => pure(a)
+      | None => fail("Expected a non-empty option value")
+    );
 
 /**
-Parses 1 or more values up until an end value
+ * Converts a parser of a string into a parser of a non-empty string, failing if the value is ""
+ */
+let getNonEmptyStr: t(string) => t(string) =
+  pstr =>
+    pstr
+    >>= (
+      str =>
+        if (str |> Relude.String.isEmpty) {
+          fail("Expected a non-empty string");
+        } else {
+          pure(str);
+        }
+    );
+
+/**
+ * Converts a parser of a tuple2 into a parser of the first value.
+ */
+let getFst: 'a 'b. t(('a, 'b)) => t('a) = pab => pab <#> (((a, _)) => a);
+
+/**
+ * Converts a parser of a tuple2 into a parser of the second value.
+ */
+let getSnd: 'a 'b. t(('a, 'b)) => t('b) = pab => pab <#> (((_, b)) => b);
+
+/**
+Parses 0 or more values up until an end value, producing a list of values and the end value
+ */
+let rec manyUntilWithEnd:
+  'a 'terminator.
+  (t('terminator), t('a)) => t((list('a), 'terminator))
+ =
+  (pt, pa) =>
+    pt
+    >>= (term => pure(([], term)))
+    <|> (
+      many1UntilWithEnd(pt, pa)
+      <#> (((nel, term)) => (Nel.toList(nel), term))
+    )
+
+/**
+Parses 1 or more values up until an end value, producing the Nel of values and the end value
 
 TODO: not stack safe
  */
-and many1Until: 'a 'terminator. (t('terminator), t('a)) => t(Nel.t('a)) =
+and many1UntilWithEnd:
+  'a 'terminator.
+  (t('terminator), t('a)) => t((Nel.t('a), 'terminator))
+ =
   (pt, pa) =>
     pa
     >>= (
       a => {
         pt
-        <#> (_ => Nel.pure(a))
-        <|> (many1Until(pt, pa) <#> (nel => Nel.cons(a, nel)));
+        <#> (term => (Nel.pure(a), term))
+        <|> (
+          many1UntilWithEnd(pt, pa)
+          <#> (((nel, term)) => (Nel.cons(a, nel), term))
+        );
       }
     );
+
+/**
+Parses 0 or more values up until an end value, producing a list of values and consuming and throwing away the end value
+ */
+let manyUntil = (pt, pa) => manyUntilWithEnd(pt, pa) |> getFst;
+
+/**
+Parses 1 or more values up until an end value, producing a list of values and consuming and throwing away the end value
+ */
+let many1Until = (pt, pa) => many1UntilWithEnd(pt, pa) |> getFst;
+
+/**
+ * Parses 0 or more values up until an end value, and produces the values and end value, without consuming the end value.
+ */
+let rec manyUntilPeekWithEnd:
+  'a 'terminator.
+  (t('terminator), t('a)) => t((list('a), 'terminator))
+ =
+  (pt, pa) =>
+    lookAhead(pt)
+    >>= (term => pure(([], term)))
+    <|> (
+      many1UntilPeekWithEnd(pt, pa)
+      <#> (
+        ((nel, term)) => {
+          (Nel.toList(nel), term);
+        }
+      )
+    )
+
+/**
+ * Parses 1 or more values up until an end value, and produces the values and end value, without consuming the end value.
+ */
+and many1UntilPeekWithEnd:
+  'a 'terminator.
+  (t('terminator), t('a)) => t((Nel.t('a), 'terminator))
+ =
+  (pt, pa) =>
+    pa
+    >>= (
+      a => {
+        lookAhead(pt)
+        <#> (term => (Nel.pure(a), term))
+        <|> (
+          many1UntilPeekWithEnd(pt, pa)
+          <#> (((nel, term)) => (Nel.cons(a, nel), term))
+        );
+      }
+    );
+
+/**
+ * Parses 0 or more values up until an end value, and produces the values, without consuming the end value.
+ */
+let manyUntilPeek = (pt, pa) => manyUntilPeekWithEnd(pt, pa) |> getFst;
+
+/**
+ * Parses 1 or more values up until an end value, and produces the values, without consuming the end value.
+ */
+let many1UntilPeek = (pt, pa) => many1UntilPeekWithEnd(pt, pa) |> getFst;
 
 /**
 Checks if the given parse result passes a predicate
@@ -528,6 +794,14 @@ let eof: t(unit) =
   );
 
 /**
+ * Runs a parser and if it succeeds, throw the value away (produce unit), and if it fails,
+ * attempt to parse an eof.
+ *
+ * This might be useful for parsing delimited values, which can optionally end with eof.
+ */
+let orEOF: 'a. t('a) => t(unit) = pa => pa |> void <|> eof;
+
+/**
 Matches any character
 */
 let anyChar: t(string) =
@@ -548,6 +822,42 @@ let anyChar: t(string) =
         })
       },
   );
+
+/**
+ * Matches any char except the given char
+ */
+let notChar: string => t(string) =
+  input =>
+    Parser(
+      ({pos, str}) =>
+        switch (String.charAt(pos, str)) {
+        | Some(c) =>
+          if (c == input) {
+            Error({
+              pos,
+              error: ParseError("Expected a char other than " ++ input),
+            });
+          } else {
+            Ok({
+              result: c,
+              suffix: {
+                str,
+                pos: pos + 1,
+              },
+            });
+          }
+        | None =>
+          Error({
+            pos,
+            error:
+              ParseError(
+                "Expected a character other than "
+                ++ input
+                ++ ", but found EOF",
+              ),
+          })
+        },
+    );
 
 /**
 Matches any digit 0-9 and converts it to an int
@@ -1041,3 +1351,28 @@ Matches a value enclosed in backticks (`)
  */
 let betweenBackTicks: t('a) => t('a) =
   pa => between(backTick, backTick, pa);
+
+/**
+ * Matches a \r carriage return line ending
+ */
+let cr: t(string) = str("\r");
+
+/**
+ * Matches a \n line feed line ending
+ */
+let lf: t(string) = str("\n");
+
+/**
+ * Matches a \r\n carriage return + line feed line ending
+ */
+let crlf: t(string) = cr <&> lf <#> (((a, b)) => a ++ b);
+
+/**
+ * Matches any of the common line endings `\r\n`, `\n` or `\r`
+ */
+let eol: t(string) = tries(crlf) <|> lf <|> cr;
+
+/**
+ * Matches the given parser, or EOL
+ */
+let orEOL: 'a. t('a) => t(unit) = pa => pa |> void <|> (eol |> void);
