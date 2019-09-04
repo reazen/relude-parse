@@ -25,12 +25,23 @@
   "homepage": "https://github.com/reazen/relude-parse#readme",
   "peerDependencies": {
     "bs-abstract": "~0.17.0",
-    "relude": "~0.25.1"
+    "relude": "~0.27.0"
   },
   "devDependencies": {
     "@glennsl/bs-jest": "~0.4.9",
     "bs-abstract": "~0.17.0",
     "bs-platform": "~5.0.6",
-    "relude": "~0.25.1"
+    "relude": "~0.27.0"
+  },
+  "jest": {
+    "verbose": false,
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/testUtils/"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/testUtils/"
+    ]
   }
 }

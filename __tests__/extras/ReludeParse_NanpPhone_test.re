@@ -80,4 +80,20 @@ describe("NanpPhone", () => {
       NanpPhone.unsafeFromString("")
     ) |> toThrow
   );
+
+  testAll(
+    "show",
+    [
+      (NanpPhone.Local, "754-3010"),
+      (Domestic, "303-754-3010"),
+      (DomesticShort, "3037543010"),
+      (DomesticParen, "(303) 754-3010"),
+      (International, "+1-303-754-3010"),
+      (InternationalShort, "+13037543010"),
+    ],
+    ((format, expected)) => {
+      let phone = NanpPhone.unsafeFromString("3037543010");
+      expect(NanpPhone.show(~format, phone)) |> toEqual(expected);
+    },
+  );
 });

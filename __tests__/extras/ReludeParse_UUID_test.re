@@ -1,11 +1,7 @@
 open Jest;
 open Expect;
-module P = ReludeParse.Parser;
-
+open TestUtils;
 module UUID = ReludeParse.UUID;
-
-let (testParse, testParseFail) =
-  ReludeParse_Parser_test.(testParse, testParseFail);
 
 describe("ReludeParse_UUID", () => {
   testAll(

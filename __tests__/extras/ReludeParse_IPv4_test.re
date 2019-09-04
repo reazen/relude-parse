@@ -1,11 +1,7 @@
 open Jest;
 open Expect;
-
-module P = ReludeParse.Parser;
+open TestUtils;
 module IPv4 = ReludeParse.IPv4;
-
-let (testParse, testParseFail) =
-  ReludeParse_Parser_test.(testParse, testParseFail);
 
 describe("ReludeParse_IPv4", () => {
   test("show", () =>

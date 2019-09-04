@@ -84,3 +84,95 @@ let parseOption = parse >> Result.getOk;
 let unsafeFromString = str =>
   parse(str)
   |> Result.fold(e => failwith(ReludeParse_Parser.ParseError.show(e)), id);
+
+type format =
+  | Local // 754-3010
+  | Domestic // 541-754-3010
+  | DomesticShort // 5417543010
+  | DomesticParen // (541) 754-3010
+  | International // +1-541-754-3010
+  | InternationalShort; // +15417543010
+
+let show = (~format=Domestic, phone: t): string => {
+  let (a, b, c, d, e, f, g, h, i, j) = toDigits(phone);
+  switch (format) {
+  | Local =>
+    string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ "-"
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+
+  | Domestic =>
+    string_of_int(a)
+    ++ string_of_int(b)
+    ++ string_of_int(c)
+    ++ "-"
+    ++ string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ "-"
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+
+  | DomesticShort =>
+    string_of_int(a)
+    ++ string_of_int(b)
+    ++ string_of_int(c)
+    ++ string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+
+  | DomesticParen =>
+    "("
+    ++ string_of_int(a)
+    ++ string_of_int(b)
+    ++ string_of_int(c)
+    ++ ") "
+    ++ string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ "-"
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+
+  | International =>
+    "+1-"
+    ++ string_of_int(a)
+    ++ string_of_int(b)
+    ++ string_of_int(c)
+    ++ "-"
+    ++ string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ "-"
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+
+  | InternationalShort =>
+    "+1"
+    ++ string_of_int(a)
+    ++ string_of_int(b)
+    ++ string_of_int(c)
+    ++ string_of_int(d)
+    ++ string_of_int(e)
+    ++ string_of_int(f)
+    ++ string_of_int(g)
+    ++ string_of_int(h)
+    ++ string_of_int(i)
+    ++ string_of_int(j)
+  };
+};

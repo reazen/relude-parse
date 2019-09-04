@@ -1,13 +1,8 @@
 open Jest;
 open Expect;
-
-module P = ReludeParse.Parser;
-open P;
-
+open TestUtils;
+open P.Infix;
 module IPv6 = ReludeParse.IPv6;
-
-let (testParse, testParseFail) =
-  ReludeParse_Parser_test.(testParse, testParseFail);
 
 describe("ReludeParse_IPv6", () => {
   testAll(
@@ -149,7 +144,7 @@ describe("ReludeParse_IPv6", () => {
       ),
     ],
     ((str, exp, pos)) =>
-    testParse(IPv6.parser <* eof, str, exp, {pos, str})
+    testParse(IPv6.parser <* P.eof, str, exp, {pos, str})
   );
 
   testAll(
@@ -163,7 +158,7 @@ describe("ReludeParse_IPv6", () => {
       ("255.257.0.1", 3),
     ],
     ((str, pos)) =>
-    testParseFail(IPv6.parser <* eof, str, pos)
+    testParseFail(IPv6.parser <* P.eof, str, pos)
   );
 
   test("parseOption (success)", () =>

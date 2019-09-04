@@ -347,4 +347,17 @@ describe("Tutorial", () => {
       |> toEqual(Belt.Result.Ok((127, 0, 0, 1)))
     )
   );
+
+  test("CSV example", () => {
+    let fieldParser =
+      ReludeParse.Parser.(
+        manyUntilPeek(str(",") |> orEOF, anyChar) <#> Relude.List.String.join
+      );
+
+    let csvParser = ReludeParse.Parser.(fieldParser |> sepBy(str(",")));
+
+    let actual = csvParser |> ReludeParse.runParser("abc,def");
+    let expected = Belt.Result.Ok(["abc", "def"]);
+    expect(actual) |> toEqual(expected);
+  });
 });
