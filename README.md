@@ -603,7 +603,7 @@ list of parser functions that come with `ReludeParse`.
 |`regex`|parses a string matching the given regex
 |`regexStr`|parses a string matching the given regex string
 |`leftParen`|parses a `(`
-|`rightParen`|parses a `(`
+|`rightParen`|parses a `)`
 |`betweenParens`|parses a value inside `(` and `)`, consuming extra whitespace padding
 |`leftCurly`|parses a `{`
 |`rightCurly`|parses a `}`
