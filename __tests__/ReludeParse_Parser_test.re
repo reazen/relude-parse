@@ -106,8 +106,7 @@ describe("ReludeParse_Parser", () => {
        ));
   });
 
-  // Skip b/c this test is just noise
-  Skip.test("tapLog", () =>
+  test("tapLog", () =>
     expect(P.anyDigit |> P.tapLog |> P.runParser("1") |> ignore) |> toEqual()
   );
 
@@ -890,6 +889,51 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyOf([P.str("a"), P.str("b"), P.str("c")]), "d", 0)
   );
 
+  // manyUntilWithEnd
+
+  test("manyUntilWithEnd full success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilWithEnd(P.str("!")),
+      "123!",
+      (["1", "2", "3"], "!"),
+      {pos: 4, str: "123!"},
+    )
+  );
+
+  test("manyUntilWithEnd empty success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilWithEnd(P.str("!")),
+      "!",
+      ([], "!"),
+      {pos: 1, str: "!"},
+    )
+  );
+
+  test("manyUntilWithEnd failure", () =>
+    testParseFail(P.anyDigit |> P.manyUntilWithEnd(P.str("!")), "123", 3)
+  );
+
+  // many1UntilWithEnd
+
+  test("many1UntilWithEnd full success", () =>
+    testParse(
+      P.anyDigit |> P.many1UntilWithEnd(P.str("!")),
+      "123!",
+      (Relude.Nel.make("1", ["2", "3"]), "!"),
+      {pos: 4, str: "123!"},
+    )
+  );
+
+  test("many1UntilWithEnd empty failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilWithEnd(P.str("!")), "!", 0)
+  );
+
+  test("many1UntilWithEnd failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilWithEnd(P.str("!")), "123", 3)
+  );
+
+  // manyUntil
+
   test("manyUntil full success", () =>
     testParse(
       P.anyDigit |> P.manyUntil(P.str("!")),
@@ -912,6 +956,8 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit |> P.manyUntil(P.str("!")), "123", 3)
   );
 
+  // many1Until
+
   test("many1Until full success", () =>
     testParse(
       P.anyDigit |> P.many1Until(P.str("!")),
@@ -928,6 +974,8 @@ describe("ReludeParse_Parser", () => {
   test("many1Until failure", () =>
     testParseFail(P.anyDigit |> P.many1Until(P.str("!")), "123", 3)
   );
+
+  // manyUntilPeekWithEnd
 
   test("manyUntilPeekWithEnd full success", () =>
     testParse(
@@ -948,8 +996,14 @@ describe("ReludeParse_Parser", () => {
   );
 
   test("manyUntilPeekWithEnd failure", () =>
-    testParseFail(P.anyDigit |> P.manyUntilPeekWithEnd(P.str("!")), "123", 3)
+    testParseFail(
+      P.anyDigit |> P.manyUntilPeekWithEnd(P.str("!")),
+      "123",
+      3,
+    )
   );
+
+  // many1UntilPeekWithEnd
 
   test("many1UntilPeekWithEnd full success", () =>
     testParse(
@@ -964,9 +1018,58 @@ describe("ReludeParse_Parser", () => {
     testParseFail(P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")), "!", 0)
   );
 
-  test("many1UntilPeek failure", () =>
-    testParseFail(P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")), "123", 3)
+  test("many1UntilPeekWithEnd failure", () =>
+    testParseFail(
+      P.anyDigit |> P.many1UntilPeekWithEnd(P.str("!")),
+      "123",
+      3,
+    )
   );
+
+  // manyUntilPeek
+
+  test("manyUntilPeek full success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilPeek(P.str("!")),
+      "123!",
+      ["1", "2", "3"],
+      {pos: 3, str: "123!"},
+    )
+  );
+
+  test("manyUntilPeek empty success", () =>
+    testParse(
+      P.anyDigit |> P.manyUntilPeek(P.str("!")),
+      "!",
+      [],
+      {pos: 0, str: "!"},
+    )
+  );
+
+  test("manyUntilPeek failure", () =>
+    testParseFail(P.anyDigit |> P.manyUntilPeek(P.str("!")), "123", 3)
+  );
+
+  // many1UntilPeek
+
+  test("many1UntilPeek full success", () =>
+    testParse(
+      P.anyDigit |> P.many1UntilPeek(P.str("!")),
+      "123!",
+      Relude.Nel.make("1", ["2", "3"]),
+      {pos: 3, str: "123!"},
+    )
+  );
+
+  test("many1UntilPeek empty failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilPeek(P.str("!")), "!", 0)
+  );
+
+  test("many1UntilPeek failure", () =>
+    testParseFail(P.anyDigit |> P.many1UntilPeek(P.str("!")), "123", 3)
+  );
+
+  // filter
 
   test("filter success", () =>
     testParse(
@@ -1010,6 +1113,24 @@ describe("ReludeParse_Parser", () => {
 
   test("getNonEmptyStr failure", () =>
     testParseFail(P.anyDigit <#> (_ => "") |> P.getNonEmptyStr, "9ab", 1)
+  );
+
+  test("getFst", () =>
+    testParse(
+      P.pure((42, "a")) |> P.getFst,
+      "whatever",
+      42,
+      {pos: 0, str: "whatever"},
+    )
+  );
+
+  test("getSnd", () =>
+    testParse(
+      P.pure((42, "a")) |> P.getSnd,
+      "whatever",
+      "a",
+      {pos: 0, str: "whatever"},
+    )
   );
 
   test("eof empty string", () =>
@@ -1711,6 +1832,57 @@ describe("ReludeParse_Parser", () => {
       "`123`",
       "123",
       {pos: 5, str: "`123`"},
+    )
+  );
+
+  test("cr", () =>
+    testParse(P.cr, "\r", "\r", {pos: 1, str: "\r"})
+  );
+
+  test("lf", () =>
+    testParse(P.lf, "\n", "\n", {pos: 1, str: "\n"})
+  );
+
+  test("crlf", () =>
+    testParse(P.crlf, "\r\n", "\r\n", {pos: 2, str: "\r\n"})
+  );
+
+  test("eol cr", () =>
+    testParse(P.eol, "\r", "\r", {pos: 1, str: "\r"})
+  );
+
+  test("eol lf", () =>
+    testParse(P.eol, "\n", "\n", {pos: 1, str: "\n"})
+  );
+
+  test("eol crlf", () =>
+    testParse(P.eol, "\r\n", "\r\n", {pos: 2, str: "\r\n"})
+  );
+
+  test("eol sepBy", () =>
+    testParse(
+      P.anyInt |> P.sepBy(P.eol),
+      "123\r\n456\r\n789",
+      [123, 456, 789],
+      {pos: 13, str: "123\r\n456\r\n789"},
+    )
+  );
+
+  test("orEOL match", () =>
+    testParse(
+      P.anyDigit <* (P.str(";") |> P.orEOL),
+      "4;",
+      "4",
+      {pos: 2, str: "4;"},
+    )
+  );
+
+  test("orEOL eol", () =>
+    testParse(
+      P.anyDigit <* (P.str(";") |> P.orEOL),
+      "4\r\nrest",
+      "4",
+      {pos: 3, str: "4\r\nrest"},
     )
   );
 });

@@ -468,14 +468,14 @@ See the code and tests for more examples.
 For more details, examples, tests, etc., please refer to the code.  Below is a possibly incomplete
 list of parser functions that come with `ReludeParse`.
 
-## Basic constructors
+## Basic operations
 
 |Function|Description|Example|
 |--------|-----------|-------|
-|`pure`|lift a pure value into a parser that always succeeds with the value
-|`fail`|lift an error message into a parser that always fails with the error message
+|`runParser`|runs a parser with an input string to produce a `Belt.Result` with either the value or a `ParseError.t`
+|`unParser`|runs a parser with an input string to produce a `Belt.Result` with either the value or a `ParseError.t` (with some additional metadata compared to `runParser`)
 
-## Core functional programming operations
+## Core FP functions and operators
 
 |Function|Description|Example|
 |--------|-----------|-------|
@@ -485,13 +485,27 @@ list of parser functions that come with `ReludeParse`.
 |`tuple2`-`5`|combine parsers into tuples
 |`map2`-`5`|combine parsers using a function to combine the results
 |`mapTuple2`-`5`|combine a tuple of parsers using a function to combine the results
+|`pure`|lift a pure value into a parser that always succeeds with the value
+|`unit`|lift a pure `()` value into a parser that always succeeds with `()`
 |`flatMap`/`bind`/`>>=`|map a function over a parser that can produce a new parser - used for sequencing parsers
+
+**Parsers also get all of the additional utilities provided by all the `Relude` typeclass extensions.**
+
+## Logging/side effects
+
+|Function|Description|Example|
+|--------|-----------|-------|
+|`tap`|runs a side effect function in a parse change, and forwards the given result along
+|`tapLog`|logs some information about the current parse position
 
 ## Error customization/handling
 
 |Function|Description|Example|
 |--------|-----------|-------|
-|`<?>`|provide a custom error message
+|`withError`/`flipWithError`/`<?>`|provide a custom error message
+|`throwError`|Create a parser that fails with the given `ParseError.t`
+|`fail`|Create a parser that fails with the given `string` message
+|`catchError`|Handle a failed parse by converting a `ParseError.t` into a new parser
 
 ## Repeated values
 
@@ -499,15 +513,19 @@ list of parser functions that come with `ReludeParse`.
 |--------|-----------|-------|
 |`many`|Run any parser 0 or more times to produce a `[]` of values (like `*` in regex)
 |`many1`|Run any parser 1 or more times to produce a `Relude.NonEmptyList` (aka `Nel`) of values (like `+` in regex) - the result is a `Nel` because we are guaranteed to find at least one value, otherwise the parser will fail
-|`manyUntil`|parse 0 or more values until a terminator is reached, producing the results and discarding the consumed the terminator
-|`many1Until`|parse 1 or more values until a terminator is reached, producing the results and discarding the consumed the terminator
-|`manyUntilWithEnd`|parse 0 or more values until a terminator is reached, producing the results and the consumed terminator
-|`many1UntilWithEnd`|parse 1 or more values until a terminator is reached, producing the results and the consumed terminator
 |`times`|run a parser `count` times and produce a `[]` of results
 |`times2`-`5`|run a parser exactly twice (up to 5) to produce a tuple of results
 |`timesMin`|run a parser at least n times to produce a list of results
 |`timesMax`|run a parser at most n times to produce a list of results
 |`timesMinMax`|run a parser at least n times and at most m times to produce a list of results
+|`manyUntilWithEnd`|parse 0 or more values until a terminator is reached, producing the results and the consumed terminator
+|`many1UntilWithEnd`|parse 1 or more values until a terminator is reached, producing the results and the consumed terminator
+|`manyUntil`|parse 0 or more values until a terminator is reached, producing the results and discarding the consumed terminator
+|`many1Until`|parse 1 or more values until a terminator is reached, producing the results and discarding the consumed terminator
+|`manyUntilPeekWithEnd`|parse 0 or more values until a terminator is reached, producing the results and the terminator, without consuming the terminator
+|`many1UntilPeekWithEnd`|parse 1 or more values until a terminator is reached, producing the results and the terminator, without consuming the terminator
+|`manyUntilPeek`|parse 0 or more values until a terminator is reached, producing the results and discarding the terminator, without consuming the terminator
+|`many1UntilPeek`|parse 1 or more values until a terminator is reached, producing the results and discarding the terminator, without consuming the terminator
 
 ## Optional/default values
 
@@ -540,13 +558,21 @@ list of parser functions that come with `ReludeParse`.
 
 |Function|Description|Example|
 |--------|-----------|-------|
-|`anyOf`|parse a value matching any of the given parsers||
+|`tries`|Tries a parser, and backtracks all the way to the original start position for the parser on failure.
+|`alt`/`<|>`/`altLazy`/`orElse`/`orElseLazy`|try a parser, and if it fails, try the other||
+|`anyOf`|Attempts to parse a value using a list of potential parsers, tried from left to right||
 
 ## Validation/extraction
 
 |Function|Description|Example|
 |--------|-----------|-------|
+|`lookAhead`/`peek`|Run a parser to produce a value, without consuming any input
+|`lookAheadNot`/`peekNot`|Run a parser which fails if it produces a value, without consuming any input
 |`filter`|apply a predicate to the result of a parser to either continue or fail the parse
+|`getSome`|converts a parser of `option('a)` into a parser of `'a`, failing if the value is `None`
+|`getNonEmptyStr`|converts a parser of `string` into a parser of a non-empty `string`, failing if the value is `""`
+|`getFst`|converts a parser of `('a, 'b)` into a parser of `'a`, failing if the value is `'b`
+|`getSnd`|converts a parser of `('a, 'b)` into a parser of `'b`, failing if the value is `'a`
 
 ## Text parsers
 
@@ -569,12 +595,36 @@ list of parser functions that come with `ReludeParse`.
 |`anyCharNotIn`|parses any single char not in the given list
 |`anyCharNotInIgnoreCase`|parses any single char not in the given list, case-insensitive
 |`anyCharInRange`|parses any character in the ASCII code range
+|`anyNonDigit`|parses any non-digit character
 |`anyLowerCaseChar`|parses a single lowercase letter char
 |`anyUpperCaseChar`|parses a single uppercase letter char
 |`anyAlpha`|parses any upper or lowercase letter char
 |`anyAlphaOrDigit`|parses any upper or lowercase letter or digit char
 |`regex`|parses a string matching the given regex
 |`regexStr`|parses a string matching the given regex string
+|`leftParen`|parses a `(`
+|`rightParen`|parses a `(`
+|`betweenParens`|parses a value inside `(` and `)`, consuming extra whitespace padding
+|`leftCurly`|parses a `{`
+|`rightCurly`|parses a `}`
+|`betweenCurlies`|parses a value inside `{` and `}`, consuming extra whitespace padding
+|`leftSquare`|parses a `[`
+|`rightSquare`|parses a `]`
+|`betweenSquares`|parses a value inside `[` and `]`, consuming extra whitespace padding
+|`leftAngle`|parses a `<`
+|`rightAngle`|parses a `>`
+|`betweenAngles`|parses a value inside `<` and `>`, consuming extra whitespace padding
+|`singleQuote`|parses a `'`
+|`betweenSingleQuotes`|parses a value inside `'` and `'`
+|`doubleQuote`|parses a `'`
+|`betweenDoubleQuotes`|parses a value inside `"` and `"`
+|`backTick`|parses a backtick
+|`betweenDoubleQuotes`|parses a value inside backticks
+|`cr`|parses a `\r`
+|`lf`|parses a `\n`
+|`crlf`|parses a `\r\n`
+|`eol`|parses a `\r\n`, `\r`, or a `\n`
+|`orEOL`|runs a parser and discards the result, or if it fails, try the `eol` parser
 
 ## Numeric parsers
 
@@ -582,9 +632,10 @@ list of parser functions that come with `ReludeParse`.
 |--------|-----------|-------|
 |`anyDigitAsInt`|parses any single character, makes sure it's a digit 0-9 and converts it to an int
 |`anyDigit`|parses any single character, makes sure it's a digit 0-9 and produces it as a single character string
-|`anyNonDigit`|parses any non-digit character
+|`anyNonEmptyDigits`|parses 1 or more consecutive digits
 |`anyNonZeroDigit`|parses any non-zero digit character
 |`anyNonZeroDigitAsInt`|parses any non-zero digit character as an int
+|`anyUnsignedInt`|parses an integer with no `+` or `-` prefix
 |`anyPositiveInt`|parses a positive integer (optional + prefix)
 |`anyNegativeInt`|parses a negative integer (- prefix)
 |`anyInt`|parses any positive or negative int
@@ -601,8 +652,10 @@ See the code and tests for a complete list of functions and examples.
 `ReludeParse` comes with a few higher-level parsers for convenience and for educational
 purposes.
 
-* `ReludeParse.IPv4` - contains a parser for IPv4 addresses
-* `ReludeParse.IPv6` - contains a parser for IPv6 addresses
-* `ReludeParse.UUID` - contains a parser for 8-4-4-4-12 UUIDs
+* `ReludeParse.IPv4` - IPv4 addresses
+* `ReludeParse.IPv6` - IPv6 addresses
+* `ReludeParse.UUID` - 8-4-4-4-12 UUIDs
+* `ReludeParse.NanpPhone` - North American Numbering Plan (NANP) phone numbers
 
-`URL` and `DateTime` parsers are forthcoming in other `Relude`-based libraries.
+Other parsers and utilities for things like `URL`s and `DateTime`s can be found in other libraries like
+[relude-url](https://github.com/reazen/relude-url) and [relude-eon](https://github.com/reazen/relude-eon).
