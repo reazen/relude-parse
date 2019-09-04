@@ -558,8 +558,8 @@ list of parser functions that come with `ReludeParse`.
 
 |Function|Description|Example|
 |--------|-----------|-------|
-|`tries`|Tries a parser, and backtracks all the way to the original start position for the parser on failure.
-|`alt`/`<|>`/`altLazy`/`orElse`/`orElseLazy`|try a parser, and if it fails, try the other||
+|`tries`|Tries a parser, and backtracks all the way to the original start position for the parser on failure.  This is useful if you are using a more complex parser that might consume some input successfully before it fails.  The default behavior is to only backtrack to the start of the failure, whereas this function forces the parse to backtrack to the beginning of the complex parser's input.
+|`alt`/`altLazy`/`orElse`/`orElseLazy`/`<pipe>`|try a parser, and if it fails, try the other||
 |`anyOf`|Attempts to parse a value using a list of potential parsers, tried from left to right||
 
 ## Validation/extraction
