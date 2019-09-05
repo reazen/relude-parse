@@ -72,10 +72,11 @@ let unsafeFromString: string => t;
 /**
  * Formats for converting a `NanpPhone` to a string
  * 
- * `Local` is a format like "754-3010" (no area code)
- * `Domestic` is a format like "(303) 754-3010"
- * `DomesticShort` is a format like "3037543010"
- * `International` is a format like "+1-303-754-3010"
+ * `Local`              is a format like "754-3010" (no area code)
+ * `Domestic`           is a format like "303-754-3010"
+ * `DomesticShort`      is a format like "3037543010"
+ * `DomesticParen`      is a format like "(303) 754-3010"
+ * `International`      is a format like "+1-303-754-3010"
  * `InternationalShort` is a format like "+13037543010"
  */
 type format =
