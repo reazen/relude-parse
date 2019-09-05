@@ -579,7 +579,7 @@ list of parser functions that come with `ReludeParse`.
 |Function|Description|Example|
 |--------|-----------|-------|
 |`eof`|verify that the end of the input has been reached
-|`ofEOF`|attempts a parser, and throws away the result, or if it fails, attempts the `eof` parser
+|`orEOF`|attempts a parser, and throws away the result, or if it fails, attempts the `eof` parser
 |`anyChar`|parses any single character
 |`notChar`|parses any single character except the given
 |`anyStr`|parses any string (WARNING: this will likely consume all remaining input)
@@ -619,7 +619,7 @@ list of parser functions that come with `ReludeParse`.
 |`doubleQuote`|parses a `'`
 |`betweenDoubleQuotes`|parses a value inside `"` and `"`
 |`backTick`|parses a backtick
-|`betweenDoubleQuotes`|parses a value inside backticks
+|`betweenBackTicks`|parses a value inside backticks
 |`cr`|parses a `\r`
 |`lf`|parses a `\n`
 |`crlf`|parses a `\r\n`
@@ -630,9 +630,9 @@ list of parser functions that come with `ReludeParse`.
 
 |Function|Description|Example|
 |--------|-----------|-------|
-|`anyDigitAsInt`|parses any single character, makes sure it's a digit 0-9 and converts it to an int
 |`anyDigit`|parses any single character, makes sure it's a digit 0-9 and produces it as a single character string
-|`anyNonEmptyDigits`|parses 1 or more consecutive digits
+|`anyDigitAsInt`|parses any single character, makes sure it's a digit 0-9 and converts it to an int
+|`anyNonEmptyDigits`|parses 1 or more consecutive digits as a string
 |`anyNonZeroDigit`|parses any non-zero digit character
 |`anyNonZeroDigitAsInt`|parses any non-zero digit character as an int
 |`anyUnsignedInt`|parses an integer with no `+` or `-` prefix
