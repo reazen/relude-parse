@@ -119,9 +119,9 @@ describe("ReludeParse_Parser", () => {
     )
   );
 
-  test("<&> (tuple2 operator)", () =>
+  test("<^> (tuple2 operator)", () =>
     testParse(
-      P.anyDigit <&> P.anyDigit,
+      P.anyDigit <^> P.anyDigit,
       "01",
       ("0", "1"),
       {pos: 2, str: "01"},
@@ -333,7 +333,7 @@ describe("ReludeParse_Parser", () => {
 
   test("lookAheadNot success", () =>
     testParse(
-      P.anyAlpha <&> P.lookAheadNot(P.str("bbb")),
+      P.anyAlpha <^> P.lookAheadNot(P.str("bbb")),
       "a999",
       ("a", ()),
       {pos: 1, str: "a999"},
@@ -341,7 +341,7 @@ describe("ReludeParse_Parser", () => {
   );
 
   test("lookAheadNot failure", () =>
-    testParseFail(P.anyAlpha <&> P.lookAheadNot(P.str("bbb")), "abbb", 1)
+    testParseFail(P.anyAlpha <^> P.lookAheadNot(P.str("bbb")), "abbb", 1)
   );
 
   test("many success", () =>

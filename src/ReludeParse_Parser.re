@@ -354,7 +354,7 @@ Infix operator for flipWithError (e.g. many(anyChar) <?> "Expected many chars")
 module Infix = {
   include Relude.Extensions.Functor.FunctorInfix(Functor);
   include Relude.Extensions.Apply.ApplyInfix(Apply);
-  let (<&>) = tuple2;
+  let (<^>) = tuple2;
   include Relude.Extensions.Monad.MonadInfix(Monad);
   include Relude.Extensions.Alt.AltInfix(Alt);
   let (<?>) = flipWithError;
@@ -1365,7 +1365,7 @@ let lf: t(string) = str("\n");
 /**
  * Matches a \r\n carriage return + line feed line ending
  */
-let crlf: t(string) = cr <&> lf <#> (((a, b)) => a ++ b);
+let crlf: t(string) = cr <^> lf <#> (((a, b)) => a ++ b);
 
 /**
  * Matches any of the common line endings `\r\n`, `\n` or `\r`

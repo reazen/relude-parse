@@ -156,8 +156,8 @@ together using a variety of techniques.
 // Combine two parsers into a tuple of the results (assuming all succeed)
 P.tuple2(P.anyDigit, P.anyDigit) |> P.runParser("12") // Belt.Result.Ok(("1", "2"))
 
-// <&> operator (operator version of tuple2)
-P.anyDigit <&> P.anyDigit |> P.runParser("12") // Belt.Result.Ok(("1", "2"))
+// <^> operator (operator version of tuple2)
+P.anyDigit <^> P.anyDigit |> P.runParser("12") // Belt.Result.Ok(("1", "2"))
 
 // Combine more parsers using tuple3 up to tuple5
 P.tuple3(P.anyDigit, P.anyDigit, P.anyDigit)
@@ -481,8 +481,8 @@ list of parser functions that come with `ReludeParse`.
 |--------|-----------|-------|
 |`map`/`<$>`/`<#>`/`<$`/`$>`|functor functions for mapping pure functions over a parser
 |`apply`/`<*>`/`<*`/`*>`|applicative functions for combining parsers
-|`<&>`|combine two parsers using a tuple
-|`tuple2`-`5`|combine parsers into tuples
+|`<^>`|combine two parsers to produce a tuple of results
+|`tuple2`-`5`|combine parsers to produce tuples of results
 |`map2`-`5`|combine parsers using a function to combine the results
 |`mapTuple2`-`5`|combine a tuple of parsers using a function to combine the results
 |`pure`|lift a pure value into a parser that always succeeds with the value
