@@ -1,6 +1,6 @@
 # relude-parse
 
-[![CircleCI](https://img.shields.io/circleci/project/github/reazen/relude-parse/master.svg)](https://circleci.com/gh/reazen/relude-parse)
+[![GitHub CI](https://img.shields.io/github/workflow/status/reazen/relude-parse/CI/master)](https://github.com/reazen/relude-parse/actions)
 [![npm](https://img.shields.io/npm/v/relude-parse.svg)](https://www.npmjs.com/package/relude-parse)
 
 # Overview

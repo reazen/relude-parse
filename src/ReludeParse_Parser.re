@@ -220,13 +220,6 @@ let altLazy: 'a. (t('a), unit => t('a)) => t('a) =
   };
 
 /**
- * Handles an error by using a new parser
- *
- * Similar to `alt` or `<|>` with the arguments reversed (and the fallback arg named)
- */
-let orElse = (~fallback: t('a), pa: t('a)): t('a) => alt(pa, fallback);
-
-/**
  * Handles an error by using a new lazily-constructed parser
  *
  * Similar to `alt` or `<|>` with the arguments reversed (and the fallback arg named and lazy)
