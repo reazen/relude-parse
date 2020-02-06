@@ -49,7 +49,7 @@ For examples below, I'm going to assume method 3.
 
 As a side note, the relude ecosystem prefers the `|>` pipe operator over `->`, so most
 functions are "significant data last" style, and the "significant data" is typically
-a value of type `Parser.t('a)`.  This allows you do do things like:
+a value of type `Parser.t('a)`.  This allows you to do things like:
 
 ```reason
 P.anyAlpha |> P.sepBy(str(","))
