@@ -1,3 +1,4 @@
+open BsBastet.Interface;
 open Relude.Globals;
 
 /**
@@ -94,7 +95,7 @@ let map: 'a 'b. ('a => 'b, t('a)) => t('b) =
 /**
  * FUNCTOR instance for Parser
  */
-module Functor: BsAbstract.Interface.FUNCTOR with type t('a) = t('a) = {
+module Functor: FUNCTOR with type t('a) = t('a) = {
   type nonrec t('a) = t('a);
   let map = map;
 };
@@ -154,7 +155,7 @@ let apply: 'a 'b. (t('a => 'b), t('a)) => t('b) =
 /**
  * APPLY instance for Parser
  */
-module Apply: BsAbstract.Interface.APPLY with type t('a) = t('a) = {
+module Apply: APPLY with type t('a) = t('a) = {
   include Functor;
   let apply = apply;
 };
@@ -174,7 +175,7 @@ let unit: t(unit) = pure();
 /**
  * APPLICATIVE instance for Parser
  */
-module Applicative: BsAbstract.Interface.APPLICATIVE with type t('a) = t('a) = {
+module Applicative: APPLICATIVE with type t('a) = t('a) = {
   include Apply;
   let pure = pure;
 };
@@ -230,7 +231,7 @@ let orElseLazy = (~fallback: unit => t('a), pa: t('a)): t('a) =>
 /**
  * ALT instance for Parser
  */
-module Alt: BsAbstract.Interface.ALT with type t('a) = t('a) = {
+module Alt: ALT with type t('a) = t('a) = {
   include Functor;
   let alt = alt;
 };
@@ -253,14 +254,14 @@ let bind: 'a 'b. (t('a), 'a => t('b)) => t('b) =
 /**
  * MONAD instance for Parser
  */
-module Monad: BsAbstract.Interface.MONAD with type t('a) = t('a) = {
+module Monad: MONAD with type t('a) = t('a) = {
   include Applicative;
   let flat_map = bind;
 };
 include Relude.Extensions.Monad.MonadExtensions(Monad);
 
 /*
- module Semigroup: BsAbstract.Interface.SEMIGROUP_ANY with type t('a) = t('a) = {
+ module Semigroup: SEMIGROUP_ANY with type t('a) = t('a) = {
    type nonrec t('a) = t('a);
    let append = (p1, p2) => map2((r1, r2) => switch((r1, r2)) {
      | (Ok({result: r1, suffix: s1}), Ok(result: r2, suffix: s2})) => Ok({result: r1
