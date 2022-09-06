@@ -21,31 +21,31 @@ let show: t => string =
     |> List.map(Js.Int.toStringWithRadix(~radix=16))
     |> List.String.joinWith(":");
 
-let allZeroGroup: P.t(int) = timesMinMax(1, 4, str("0")) <#> (_ => 0);
+let allZeroGroup: P.t(int) = timesMinMax(1, 4, str("0")) <$$> (_ => 0);
 
 let threeZeroPadGroup =
   times(3, str("0"))
   *> anyHexDigit
-  <#> (hexDigit => int_of_string("0x" ++ hexDigit));
+  <$$> (hexDigit => int_of_string("0x" ++ hexDigit));
 
 let twoZeroPadGroup =
   times(2, str("0"))
   *> timesMinMax(1, 2, anyHexDigit)
-  <#> List.String.join
-  <#> (hexDigits => int_of_string("0x" ++ hexDigits));
+  <$$> List.String.join
+  <$$> (hexDigits => int_of_string("0x" ++ hexDigits));
 
 let oneZeroPadGroup =
   str("0")
   *> timesMinMax(1, 3, anyHexDigit)
-  <#> List.String.join
-  <#> (hexDigits => int_of_string("0x" ++ hexDigits));
+  <$$> List.String.join
+  <$$> (hexDigits => int_of_string("0x" ++ hexDigits));
 
 let nonZeroPaddedGroup: P.t(int) =
-  (anyNonZeroHexDigit, timesMax(3, anyHexDigit) <#> List.String.join)
+  (anyNonZeroHexDigit, timesMax(3, anyHexDigit) <$$> List.String.join)
   |> mapTuple2((first, rest) => first ++ rest)
-  <#> (hexDigits => int_of_string("0x" ++ hexDigits));
+  <$$> (hexDigits => int_of_string("0x" ++ hexDigits));
 
-let emptyGroup: P.t(int) = str("") <#> (_ => 0);
+let emptyGroup: P.t(int) = str("") <$$> (_ => 0);
 
 let group: P.t(int) =
   tries(threeZeroPadGroup)
@@ -96,7 +96,7 @@ let groups: P.t(t) = {
   );
 };
 
-let loopbackAbbreviated = str("::1") <#> const(loopback);
+let loopbackAbbreviated = str("::1") <$$> const(loopback);
 
 let parser: P.t(t) = loopbackAbbreviated <|> groups;
 

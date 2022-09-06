@@ -25,13 +25,13 @@
   "homepage": "https://github.com/reazen/relude-parse#readme",
   "peerDependencies": {
     "bs-bastet": "*",
-    "relude": "^0.66.1"
+    "relude": "trite/relude#dep-version-bumps"
   },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.5.1",
     "bs-bastet": "*",
     "bs-platform": "*",
-    "relude": "^0.66.1"
+    "relude": "trite/relude#dep-version-bumps"
   },
   "jest": {
     "verbose": false,

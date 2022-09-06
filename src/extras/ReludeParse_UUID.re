@@ -10,7 +10,7 @@ let unsafeFromParts = (a, b, c, d, e) =>
 let show: t => string = (UUID(str)) => str;
 
 let hexDigits: int => Parser.t(string) =
-  count => Parser.(times(count, anyHexDigit) <#> List.String.join);
+  count => Parser.(times(count, anyHexDigit) <$$> List.String.join);
 
 let hyphen = Parser.str("-");
 
