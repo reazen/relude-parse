@@ -478,7 +478,7 @@ let rec timesMax: 'a. (int, t('a)) => t(list('a)) =
       pure([]);
     } else {
       List.concat
-      <$> (pa <#> (a => [a]) <|> pure([]))
+      <$> (pa <$$> (a => [a]) <|> pure([]))
       <*> timesMax(max - 1, pa);
     };
 
@@ -534,7 +534,7 @@ and sepBy1: 'a 'sep. (t('sep), t('a)) => t(Nel.t('a)) =
     pa
     >>= (
       h => {
-        many(ps *> pa) <#> (t => Nel.make(h, t));
+        many(ps *> pa) <$$> (t => Nel.make(h, t));
       }
     );
   };
@@ -556,7 +556,7 @@ and sepByOptEnd1: 'a 'sep. (t('sep), t('a)) => t(Nel.t('a)) =
         ps
         >>= (
           _ => {
-            sepByOptEnd(ps, pa) <#> (t => Nel.make(h, t));
+            sepByOptEnd(ps, pa) <$$> (t => Nel.make(h, t));
           }
         )
         <|> pure(Nel.pure(h));
@@ -593,7 +593,7 @@ Parses 1 or more values separated by a right-associative operator.
  */
 and chainr1': 'a. (t(('a, 'a) => 'a), 'a, t('a)) => t('a) =
   (pf, a, pa) =>
-    pf >>= (f => chainr1(pf, pa) <#> (a2 => f(a, a2))) <|> pure(a);
+    pf >>= (f => chainr1(pf, pa) <$$> (a2 => f(a, a2))) <|> pure(a);
 
 /**
 Parses 0 or more values separated by a left-associative operator.
@@ -650,12 +650,12 @@ let getNonEmptyStr: t(string) => t(string) =
 /**
  * Converts a parser of a tuple2 into a parser of the first value.
  */
-let getFst: 'a 'b. t(('a, 'b)) => t('a) = pab => pab <#> (((a, _)) => a);
+let getFst: 'a 'b. t(('a, 'b)) => t('a) = pab => pab <$$> (((a, _)) => a);
 
 /**
  * Converts a parser of a tuple2 into a parser of the second value.
  */
-let getSnd: 'a 'b. t(('a, 'b)) => t('b) = pab => pab <#> (((_, b)) => b);
+let getSnd: 'a 'b. t(('a, 'b)) => t('b) = pab => pab <$$> (((_, b)) => b);
 
 /**
 Parses 0 or more values up until an end value, producing a list of values and the end value
@@ -669,7 +669,7 @@ let rec manyUntilWithEnd:
     >>= (term => pure(([], term)))
     <|> (
       many1UntilWithEnd(pt, pa)
-      <#> (((nel, term)) => (Nel.toList(nel), term))
+      <$$> (((nel, term)) => (Nel.toList(nel), term))
     )
 
 /**
@@ -686,10 +686,10 @@ and many1UntilWithEnd:
     >>= (
       a => {
         pt
-        <#> (term => (Nel.pure(a), term))
+        <$$> (term => (Nel.pure(a), term))
         <|> (
           many1UntilWithEnd(pt, pa)
-          <#> (((nel, term)) => (Nel.cons(a, nel), term))
+          <$$> (((nel, term)) => (Nel.cons(a, nel), term))
         );
       }
     );
@@ -716,7 +716,7 @@ let rec manyUntilPeekWithEnd:
     >>= (term => pure(([], term)))
     <|> (
       many1UntilPeekWithEnd(pt, pa)
-      <#> (
+      <$$> (
         ((nel, term)) => {
           (Nel.toList(nel), term);
         }
@@ -735,10 +735,10 @@ and many1UntilPeekWithEnd:
     >>= (
       a => {
         lookAhead(pt)
-        <#> (term => (Nel.pure(a), term))
+        <$$> (term => (Nel.pure(a), term))
         <|> (
           many1UntilPeekWithEnd(pt, pa)
-          <#> (((nel, term)) => (Nel.cons(a, nel), term))
+          <$$> (((nel, term)) => (Nel.cons(a, nel), term))
         );
       }
     );
@@ -878,19 +878,19 @@ let anyDigit: t(string) = string_of_int <$> anyDigitAsInt;
 /**
 Matches any string (warning: this will likely consume as much input as possible)
  */
-let anyStr: t(string) = many(anyChar) <#> List.String.join;
+let anyStr: t(string) = many(anyChar) <$$> List.String.join;
 
 /**
 Matches any non-empty string
  */
 let anyNonEmptyStr: t(string) =
-  many1(anyChar) <#> (Nel.toList >> List.String.join);
+  many1(anyChar) <$$> (Nel.toList >> List.String.join);
 
 /**
 Matches any non-empty string of digits
  */
 let anyNonEmptyDigits: t(string) =
-  many1(anyDigit) <#> (Nel.toList >> List.String.join);
+  many1(anyDigit) <$$> (Nel.toList >> List.String.join);
 
 /**
 Matches the given string (case-sensitive)
@@ -1039,21 +1039,21 @@ let anyNonZeroDigit: t(string) = anyCharInRange(49, 57);
 /**
 Matches any non-zero digit character as an int
  */
-let anyNonZeroDigitAsInt: t(int) = anyNonZeroDigit <#> int_of_string;
+let anyNonZeroDigitAsInt: t(int) = anyNonZeroDigit <$$> int_of_string;
 
 /**
 Matches a string of digits starting with a 0 or a digit 1-9 followed by any other digits
  */
 let anyUnsignedInt: t(int) =
   str("0")
-  <#> int_of_string
+  <$$> int_of_string
   <|> (
     anyNonZeroDigit
     >>= (
       nonZeroDigit =>
         many(anyDigit)
-        <#> List.String.join
-        <#> (otherDigits => int_of_string(nonZeroDigit ++ otherDigits)) // int_of_string is unsafe, but we are relatively sure we have a valid int string here, so we'll allow it
+        <$$> List.String.join
+        <$$> (otherDigits => int_of_string(nonZeroDigit ++ otherDigits)) // int_of_string is unsafe, but we are relatively sure we have a valid int string here, so we'll allow it
     )
   );
 
@@ -1068,7 +1068,7 @@ Matches a "-" negative sign followed by a digit 1-9, followed by any other digit
 let anyNegativeInt: t(int) =
   str("-")
   *> anyUnsignedInt
-  <#> (i => i * (-1))
+  <$$> (i => i * (-1))
   <?> "Expected any negative int";
 
 /**
@@ -1237,12 +1237,12 @@ let anyDecimal: t(string) =
 /**
 Matches a string "true" (case-insensitive)
  */
-let boolTrue: t(bool) = strIgnoreCase("true") <#> (_ => true);
+let boolTrue: t(bool) = strIgnoreCase("true") <$$> (_ => true);
 
 /**
 Matches a string "false" (case-insensitive)
  */
-let boolFalse: t(bool) = strIgnoreCase("false") <#> (_ => false);
+let boolFalse: t(bool) = strIgnoreCase("false") <$$> (_ => false);
 
 /**
 Matches true or false
@@ -1359,7 +1359,7 @@ let lf: t(string) = str("\n");
 /**
  * Matches a \r\n carriage return + line feed line ending
  */
-let crlf: t(string) = cr <^> lf <#> (((a, b)) => a ++ b);
+let crlf: t(string) = cr <^> lf <$$> (((a, b)) => a ++ b);
 
 /**
  * Matches any of the common line endings `\r\n`, `\n` or `\r`

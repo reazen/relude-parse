@@ -1,6 +1,6 @@
 {
   "name": "relude-parse",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Monadic parsing with Relude",
   "main": "index.js",
   "scripts": {
@@ -24,14 +24,14 @@
   },
   "homepage": "https://github.com/reazen/relude-parse#readme",
   "peerDependencies": {
-    "bs-bastet": "^1.2.5",
-    "relude": "^0.59.0"
+    "bs-bastet": "*",
+    "relude": "trite/relude#dep-version-bumps"
   },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.5.1",
-    "bs-bastet": "^1.2.5",
-    "bs-platform": "^7.2.2",
-    "relude": "^0.59.0"
+    "bs-bastet": "*",
+    "bs-platform": "*",
+    "relude": "trite/relude#dep-version-bumps"
   },
   "jest": {
     "verbose": false,
